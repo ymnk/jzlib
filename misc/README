@@ -1,0 +1,30 @@
+
+README of misc directory
+====================================================================
+Last modified: Wed Dec 20 06:11:00 UTC 2000
+
+- mindtermsrc-v121-compression.patch
+  This file is a 'unofficial' patch for MindTerm v1.2.1. 
+  It adds the packet compression support to this awesome SSH system.
+  MindTerm is a SSH1 client program written in pure Java under GPL and
+  developed by MindBright Technology.
+  The source code of MindTerm v1.2.1 is available at 
+    http://www.mindbright.com/download/
+
+  $ tar xzf mindtermsrc-v121.tgz
+  $ cd mindbright
+  $ patch -p1 < mindtermsrc-v121-compression.patch
+Note: JZlib must be accessible via the class path.
+  $ make
+  $ cd ..
+  $ java mindbright.application.MindTerm
+
+  Before connecting to somewhere, select the compression level in
+  the 'Settings->SSH Connection...' panel.
+  If you add the debug option '--D' in invoking MindTerm,
+  some informations related to the compression ratio will be printed out
+  after the end of each session.
+
+
+``SSH is a registered trademark and Secure Shell is a trademark of
+SSH Communications Security Corp (www.ssh.com)''.

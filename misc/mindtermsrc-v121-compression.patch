@@ -1,0 +1,368 @@
+diff -Naur mindbright/Makefile mindbright-compression/Makefile
+--- mindbright/Makefile	Tue Aug  1 20:37:08 2000
++++ mindbright-compression/Makefile	Tue Dec 19 05:49:00 2000
+@@ -56,6 +56,7 @@
+ 	ssh/SSHTxChannel.class \
+ 	ssh/SSHTunnel.class \
+ 	ssh/SSHProtocolPlugin.class \
++	ssh/SSHCompression.class \
+ 	ssh/SSHPdu.class \
+ 	ssh/SSHDataInputStream.class \
+ 	ssh/SSHDataOutputStream.class \
+diff -Naur mindbright/ssh/SSH.java mindbright-compression/ssh/SSH.java
+--- mindbright/ssh/SSH.java	Tue Aug  1 22:30:52 2000
++++ mindbright-compression/ssh/SSH.java	Tue Dec 19 05:59:45 2000
+@@ -206,6 +206,8 @@
+   protected Cipher rcvCipher;
+   protected int    cipherType;
+ 
++  protected static int compressionLevel=0;
++
+   // Server data fields
+   //
+   protected byte[]  srvCookie;
+diff -Naur mindbright/ssh/SSHClient.java mindbright-compression/ssh/SSHClient.java
+--- mindbright/ssh/SSHClient.java	Tue Apr  4 09:34:12 2000
++++ mindbright-compression/ssh/SSHClient.java	Tue Dec 19 05:31:57 2000
+@@ -481,6 +481,10 @@
+   protected void disconnect(boolean graceful) {
+     if(!isConnected)
+       return;
++    if(SSH.compressionLevel!=0){
++      SSHCompression.uninit();
++      SSH.compressionLevel=0;
++    }
+     isConnected   = false;
+     isOpened      = false;
+     gracefulExit  = graceful;
+@@ -897,7 +901,7 @@
+   void initiateSession() throws IOException {
+     // !!! java.util.zip.Deflater/Inflater can't be used since we can't give
+     // the native inflate/deflate methods the Z_PARTIAL_FLUSH flag
+-    // requestCompression(3);
++    requestCompression(user.getCompressionLevel());
+ 
+     if(user.wantPTY())
+       requestPTY();
+@@ -939,11 +943,20 @@
+   }
+ 
+   void requestCompression(int level) throws IOException {
++    if(level==0) return;
++    if(level<0 || level>9){
++      if(interactor!=null)
++	interactor.report("Error requesting invalid compression level: " + level);
++      return;
++    }
++
+     SSHPduOutputStream outpdu = new SSHPduOutputStream(CMSG_REQUEST_COMPRESSION, sndCipher);
+     outpdu.writeInt(level);
+     outpdu.writeTo(sshOut);
+     if(!isSuccess() && interactor != null)
+ 	interactor.report("Error requesting compression level: " + level);
++    SSH.compressionLevel=level;
++    SSHCompression.init(level);
+   }
+ 
+   void requestMaxPacketSz(int sz) throws IOException {
+diff -Naur mindbright/ssh/SSHClientUser.java mindbright-compression/ssh/SSHClientUser.java
+--- mindbright/ssh/SSHClientUser.java	Sat Feb 26 12:28:51 2000
++++ mindbright-compression/ssh/SSHClientUser.java	Mon Dec 18 05:23:28 2000
+@@ -30,6 +30,7 @@
+   public String  getDisplay();
+   public int     getMaxPacketSz();
+   public int     getAliveInterval();
++  public int     getCompressionLevel();
+ 
+   public boolean wantX11Forward();
+   public boolean wantPrivileged();
+diff -Naur mindbright/ssh/SSHClientUserAdaptor.java mindbright-compression/ssh/SSHClientUserAdaptor.java
+--- mindbright/ssh/SSHClientUserAdaptor.java	Sat Feb 26 12:28:51 2000
++++ mindbright-compression/ssh/SSHClientUserAdaptor.java	Mon Dec 18 06:07:33 2000
+@@ -62,6 +62,10 @@
+     return 0;
+   }
+ 
++  public int getCompressionLevel() {
++    return 0;
++  }
++
+   public boolean wantX11Forward() {
+     return false;
+   }
+diff -Naur mindbright/ssh/SSHCompression.java mindbright-compression/ssh/SSHCompression.java
+--- mindbright/ssh/SSHCompression.java	Thu Jan  1 00:00:00 1970
++++ mindbright-compression/ssh/SSHCompression.java	Wed Dec 20 03:13:52 2000
+@@ -0,0 +1,145 @@
++/******************************************************************************
++ *
++ * Copyright (c) 1998,99 by Mindbright Technology AB, Stockholm, Sweden.
++ *                 www.mindbright.se, info@mindbright.se
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ * GNU General Public License for more details.
++ *
++ *****************************************************************************
++ * $Author: ymnk@jcraft.com $
++ * $Date: 2000/12/18 17:13:50 $
++ * $Name: rel0-0-0 $
++ *****************************************************************************/
++package mindbright.ssh;
++
++import mindbright.ssh.*;
++import com.jcraft.jzlib.*;
++
++final class SSHCompression{
++  static private ZStream deflate_stream=null;
++  static private ZStream inflate_stream=null;
++
++  static void init(int level){
++    deflate_stream=new ZStream();
++    inflate_stream=new ZStream();
++    deflate_stream.deflateInit(level);
++    inflate_stream.inflateInit();
++  }
++
++  static void uninit(){
++    if(SSH.DEBUGMORE){
++    if(deflate_stream!=null)
++    System.out.println("compress outgoing: raw data "+deflate_stream.total_in+
++		       ", compressed "+deflate_stream.total_out+
++		       ", factor "+(deflate_stream.total_in == 0 ?
++				    0.0 :
++				    ((double)deflate_stream.total_out) /
++				    ((double)deflate_stream.total_in)));
++    if(inflate_stream!=null)
++    System.out.println("compress incoming: raw data "+inflate_stream.total_out+
++		       ", compressed "+inflate_stream.total_in+
++		       ", factor "+(inflate_stream.total_out == 0 ?
++				    0.0 :
++				    ((double)inflate_stream.total_in) /
++				    ((double)inflate_stream.total_out)));
++    }
++    if(deflate_stream!=null){
++      deflate_stream.deflateEnd();
++      deflate_stream.free();
++      deflate_stream=null;
++    }
++    if(inflate_stream!=null){
++      inflate_stream.inflateEnd();
++      inflate_stream.free();
++      inflate_stream=null;
++    }
++  }
++
++  static private final int BUF_SIZE=4096;
++  static private byte[] d_buf=new byte[BUF_SIZE];
++  static private byte[] i_buf=new byte[BUF_SIZE];
++
++  static int compress(byte[] buf, int len){
++
++    deflate_stream.next_in=buf;
++    deflate_stream.next_in_index=8;
++    deflate_stream.avail_in=len-8;
++
++    int status;
++    int outputlen=8;
++
++    do{
++      deflate_stream.next_out=d_buf;
++      deflate_stream.next_out_index=0;
++      deflate_stream.avail_out=BUF_SIZE;
++      status=deflate_stream.deflate(JZlib.Z_PARTIAL_FLUSH);
++      switch(status){
++      case JZlib.Z_OK:
++	System.arraycopy(d_buf, 0, 
++			 buf, outputlen,
++			 BUF_SIZE-deflate_stream.avail_out);
++	outputlen+=(BUF_SIZE-deflate_stream.avail_out);
++	break;
++      default:
++	System.err.println("SSHCompression.compress: deflate returnd "+status);
++      }
++    }
++    while(deflate_stream.avail_out==0);
++    return outputlen;
++  }
++
++  static private byte[] out_buf = new byte[BUF_SIZE];
++  static void uncompress(SSHPduInputStream input){
++    int pad=(8-(input.length%8));
++    int out_end=0;
++
++    inflate_stream.next_in=input.bytes;
++    inflate_stream.next_in_index=pad;
++    inflate_stream.avail_in=input.length - 4; // chop checksum field
++
++    while(true){
++      inflate_stream.next_out=i_buf;
++      inflate_stream.next_out_index=0;
++      inflate_stream.avail_out=BUF_SIZE;
++
++      int status=inflate_stream.inflate(JZlib.Z_PARTIAL_FLUSH);
++      switch(status){
++      case JZlib.Z_OK:
++        if(out_buf.length<out_end+BUF_SIZE-inflate_stream.avail_out){
++	  byte[] foo=new byte[out_end+BUF_SIZE-inflate_stream.avail_out];
++          System.arraycopy(out_buf, 0, foo, 0, out_end);
++          out_buf=foo;
++	}
++	System.arraycopy(i_buf, 0, 
++			 out_buf, out_end,
++			 BUF_SIZE-inflate_stream.avail_out);
++	out_end+=(BUF_SIZE-inflate_stream.avail_out);
++	break;
++      case JZlib.Z_BUF_ERROR:
++	if(out_end>input.bytes.length){
++	  byte[] foo=new byte[out_end];
++          System.arraycopy(out_buf, 0, foo, 0, out_end);
++          input.bytes=foo;
++	}
++	else{
++          System.arraycopy(out_buf, 0, input.bytes, 0, out_end);
++	}
++	input.length=out_end;
++	try{ input.reset(); }
++	catch(Exception e){}
++	return;
++      default:
++	System.err.println("SSHCompression.uncompress: inflate returnd "+status);
++	return; // humm..
++      }
++    }
++  }
++}
+diff -Naur mindbright/ssh/SSHMenuHandlerFull.java mindbright-compression/ssh/SSHMenuHandlerFull.java
+--- mindbright/ssh/SSHMenuHandlerFull.java	Tue Aug  1 20:37:08 2000
++++ mindbright-compression/ssh/SSHMenuHandlerFull.java	Tue Dec 19 05:26:02 2000
+@@ -544,6 +544,7 @@
+ 
+   Dialog     settingsDialog = null;
+   Choice     choiceCipher, choiceAuthTyp;
++  Choice     choiceCompressionLevel;
+   Checkbox   cbX11, cbPrvPrt, cbRemFwd, cbIdHost, cbPortFtp, cbLocHst, cbMTU, cbAlive, cbForcPty;
+   TextField  textPort, textUser, textId, textDisp, textMtu, textAlive, textSrv,
+       textRealAddr, textAuthList, textLocHost;
+@@ -801,6 +802,17 @@
+       grid2.setConstraints(cbRemFwd, gridc2);
+       ap.add(cbRemFwd);
+ 
++      gridc2.gridy = 7;
++      lbl = new Label("CompressionLevel:");
++      grid2.setConstraints(lbl, gridc2);
++      ap.add(lbl);
++      choiceCompressionLevel = new Choice();
++      for(i = 0; i < 10; i++) {
++	choiceCompressionLevel.add(new Integer(i).toString());
++      }
++      grid2.setConstraints(choiceCompressionLevel, gridc2);
++      ap.add(choiceCompressionLevel);
++
+       gridc.gridy = 7;
+       gridc.insets = new Insets(0, 0, 0, 0);
+       gridc.anchor = GridBagConstraints.CENTER;
+@@ -844,6 +856,8 @@
+ 	    } else {
+ 	      client.propsHandler.setProperty("authtyp", authType);
+ 	    }
++	    String level = choiceCompressionLevel.getSelectedItem();
++	    client.propsHandler.setProperty("compression", level);
+ 	    client.propsHandler.setProperty("port", textPort.getText());
+ 	    client.propsHandler.setProperty("usrname", textUser.getText());
+ 	    client.propsHandler.setProperty("cipher", cipher[choiceCipher.getSelectedIndex()]);
+@@ -924,6 +938,9 @@
+       choiceAuthTyp.select("custom...");
+       textAuthList.setText(at);
+     }
++
++    at = client.propsHandler.getProperty("compression");
++    choiceCompressionLevel.select(at);
+ 
+     textId.setText(client.propsHandler.getProperty("idfile"));
+ 
+diff -Naur mindbright/ssh/SSHPduInputStream.java mindbright-compression/ssh/SSHPduInputStream.java
+--- mindbright/ssh/SSHPduInputStream.java	Mon Jul 19 17:13:50 1999
++++ mindbright-compression/ssh/SSHPduInputStream.java	Tue Dec 19 05:32:08 2000
+@@ -102,6 +102,17 @@
+       throw new IOException("Invalid checksum in packet");
+ 
+     this.skip(8 - (len % 8));
++
++    if(SSH.compressionLevel!=0){
++      //System.out.print("readFrom: length="+length);
++      byte[] foo=bytes;
++      SSHCompression.uncompress(this);
++      if(foo!=bytes){
++        this.in = new PduByteArrayInputStream(bytes);
++      }
++      //System.out.println(" -> length="+length);
++    }
++
+     type = (int)this.readByte();
+ 
+     if(type == SSH.MSG_DEBUG) {
+diff -Naur mindbright/ssh/SSHPduOutputStream.java mindbright-compression/ssh/SSHPduOutputStream.java
+--- mindbright/ssh/SSHPduOutputStream.java	Mon Jul 19 17:13:50 1999
++++ mindbright-compression/ssh/SSHPduOutputStream.java	Tue Dec 19 05:32:14 2000
+@@ -126,6 +126,13 @@
+     int                      padSz;
+     int                      off = 0;
+ 
++    if(SSH.compressionLevel!=0){
++      //System.out.print("writeTo: size="+bytes.size());
++      int size=SSHCompression.compress(bytes.getBuf(), bytes.size());
++      bytes.setCount(size);
++      //System.out.println(" -> size="+bytes.size());
++    }
++
+     iSz   = bytes.size();
+     pad   = (iSz + 4) % 8;
+     crc32 = (int)CRC32.getValue(bytes.getBuf(), pad, iSz - pad);
+diff -Naur mindbright/ssh/SSHPropertyHandler.java mindbright-compression/ssh/SSHPropertyHandler.java
+--- mindbright/ssh/SSHPropertyHandler.java	Tue Aug  1 20:37:08 2000
++++ mindbright-compression/ssh/SSHPropertyHandler.java	Tue Dec 19 05:23:39 2000
+@@ -84,6 +84,7 @@
+ 	{ "secrand",  "0",           "level of security in random seed (for generating session key)",
+ 	  "(0-2, 0=low and 2=high)" },
+ 	{ "alive",    "0",           "Connection keep-alive interval in seconds (0 means none)", "(0-600)" },
++	{ "compression",    "0",     "Compression Level (0 means none, 1=fast, 9=slow,best )", "(0-9)" },
+ 	{ "x11fwd",   "false",       "indicates whether X11 display is forwarded or not", "(true/false)" },
+ 	{ "prvport",  "false",       "indicates whether to use a privileged port or not (locally)", "(true/false)" },
+ 	{ "forcpty",  "true",        "indicates whether to allocate a pty or not", "(true/false)" },
+@@ -295,7 +296,7 @@
+ 	    if(!(value.equals("true") || value.equals("false")))
+ 		throw new IllegalArgumentException("Value for " + key + " must be 'true' or 'false'");
+ 	    //
+-	} else if(key.equals("port") || key.equals("proxyport") || key.equals("mtu") ||
++	} else if(key.equals("port") || key.equals("proxyport") || key.equals("mtu") || key.equals("compression") ||
+ 		  key.equals("secrand") || key.equals("alive")) {
+ 	    try {
+ 		int val = Integer.valueOf(value).intValue();
+@@ -309,6 +310,9 @@
+ 		} else if(key.equals("secrand")) {
+ 		    if(val < 0 || val > 2)
+ 			throw new IllegalArgumentException("Secrand must be 0-2");
++		} else if(key.equals("compression")) {
++		    if(val < 0 || val > 9)
++			throw new IllegalArgumentException("Compression Level must be 0-9");
+ 		}
+ 	    } catch (NumberFormatException e) {
+ 		throw new IllegalArgumentException("Value for " + key + " must be an integer");
+@@ -1203,6 +1207,10 @@
+ 
+     public int getAliveInterval() {
+ 	return Integer.valueOf(getProperty("alive")).intValue();
++    }
++
++    public int getCompressionLevel() {
++	return Integer.valueOf(getProperty("compression")).intValue();
+     }
+ 
+     public boolean wantX11Forward() {

@@ -1,0 +1,29 @@
+
+README of example directory
+====================================================================
+Last modified: Wed Dec 20 05:54:08 UTC 2000
+
+This directory contains some examples, which demonstrate how to use JZlib.
+
+- test_deflate_inflate.java
+  This program tests deflate/inflate with small buffers.
+
+- test_large_deflate_inflate.java
+  This program tests deflate/inflate with large buffers and
+  dynamic change of compression level
+
+- test_dict_deflate_inflate.java
+  This program tests deflate/inflate with preset dictionary.
+
+- test_flush_sync
+  This program tests deflate/inflate with full flush.
+
+- test_stream_deflate_inflate.java
+  This program tests deflate/inflate for I/O stream.
+
+For example, if you want to compile and run 'test_deflate_inflate.java',
+try following steps.
+
+  $ javac -classpath .. test_deflate_inflate.java
+  $ javac -classpath ..:. test_deflate_inflate
+
