@@ -92,17 +92,15 @@ public class DeflaterOutputStream extends FilterOutputStream {
     else if (off<0 | len<0 | off+len>b.length) {
       throw new IndexOutOfBoundsException();
     }
-    else if (len == 0) {
-      return;
-    }
     else {
       int flush = syncFlush ? JZlib.Z_SYNC_FLUSH : JZlib.Z_NO_FLUSH;
       deflater.setInput(b, off, len, true);
-      while (deflater.avail_in>0) {
+      do {
         int err = deflate(flush);
         if (err == JZlib.Z_STREAM_END)
           break;
       }
+      while (deflater.avail_in>0);
     }
   }
 
