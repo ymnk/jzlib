@@ -91,15 +91,15 @@ public class InflaterInputStream extends FilterInputStream {
     else if (len == 0) {
       return 0;
     }
-    else if (eof) {
+    else if (eof && inflater.finished()) {
       return -1;
     }
 
     int n = 0;
     inflater.setOutput(b, off, len);
-    while(!eof) {
+    while(!eof || !inflater.finished()) {
       if(inflater.avail_in==0)
-        fill();
+        eof = fill();
       int err = inflater.inflate(JZlib.Z_NO_FLUSH);
       n += inflater.next_out_index - off;
       off = inflater.next_out_index;
@@ -166,10 +166,13 @@ public class InflaterInputStream extends FilterInputStream {
     }
   }
 
-  protected void fill() throws IOException {
+  protected boolean fill() throws IOException {
     if (closed) { throw new IOException("Stream closed"); }
     int len = in.read(buf, 0, buf.length);
     if (len == -1) {
+      if (inflater.istate.wrap == 0) {
+        return true;
+      }
       if(inflater.istate.was != -1){  // in reading trailer
         throw new IOException("footer is not found");
       }
@@ -178,6 +181,7 @@ public class InflaterInputStream extends FilterInputStream {
       }
     }
     inflater.setInput(buf, 0, len, true);
+    return false;
   }
 
   public boolean markSupported() {

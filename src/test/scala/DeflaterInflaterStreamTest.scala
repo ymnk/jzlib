@@ -41,16 +41,20 @@ class DeflaterInflaterStreamTest {
   }
 
   @Test
-  def read_writh_with_buf = {
+  def read_write_with_buf = {
 
+    List(true, false).foreach { nowrap =>
     (1 to 100 by 3).foreach { i =>
-
+    List(randombuf(10240), 
+         "{\"color\":2,\"id\":\"EvLd4UG.CXjnk35o1e8LrYYQfHu0h.d*SqVJPoqmzXM::Ly::Snaps::Store::Commit\"}".getBytes).foreach { data1 =>
+                              
       val buf = new Array[Byte](i)
 
-      val data1 = randombuf(10240)
-
       val baos = new ByteArrayOutputStream
-      val gos = new DeflaterOutputStream(baos)
+      val gos = new DeflaterOutputStream(baos,
+                                         new Deflater(JZlib.Z_DEFAULT_COMPRESSION,
+                                                      JZlib.MAX_WBITS,
+                                                      nowrap))
 
       val datai = new ByteArrayInputStream(data1)
       Stream.continually(datai.read(buf)).
@@ -59,7 +63,7 @@ class DeflaterInflaterStreamTest {
       datai.close
 
       val bais = new ByteArrayInputStream(baos.toByteArray)
-      val gis = new InflaterInputStream(bais)
+      val gis = new InflaterInputStream(bais, new Inflater(JZlib.MAX_WBITS, nowrap))
 
       val baos2 = new ByteArrayOutputStream
 
@@ -70,6 +74,8 @@ class DeflaterInflaterStreamTest {
 
       assertThat(data2.length, is(data1.length))
       assertThat(data2, is(data1))
+    }
+    }
     }
   }
 
