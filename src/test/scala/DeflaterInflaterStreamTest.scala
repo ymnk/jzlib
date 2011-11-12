@@ -45,10 +45,10 @@ class DeflaterInflaterStreamTest {
 
     List(true, false).foreach { nowrap =>
     (1 to 100 by 3).foreach { i =>
-
+    List(randombuf(10240), 
+         "{\"color\":2,\"id\":\"EvLd4UG.CXjnk35o1e8LrYYQfHu0h.d*SqVJPoqmzXM::Ly::Snaps::Store::Commit\"}".getBytes).foreach { data1 =>
+                              
       val buf = new Array[Byte](i)
-
-      val data1 = randombuf(10240)
 
       val baos = new ByteArrayOutputStream
       val gos = new DeflaterOutputStream(baos,
@@ -74,6 +74,7 @@ class DeflaterInflaterStreamTest {
 
       assertThat(data2.length, is(data1.length))
       assertThat(data2, is(data1))
+    }
     }
     }
   }
