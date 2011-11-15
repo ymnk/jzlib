@@ -7,6 +7,7 @@ import org.junit.{Test, Before}
 import org.junit.Assert._
 import org.hamcrest.CoreMatchers._
 
+import java.io.{ByteArrayOutputStream => BAOS, ByteArrayInputStream => BAIS}
 import java.io._
 
 import JZlib._
@@ -21,55 +22,57 @@ class DeflaterInflaterStreamTest {
   @Test
   def one_by_one = {
     val data1 = randombuf(1024)
+    implicit val buf = new Array[Byte](1)
 
-    val baos = new ByteArrayOutputStream
+    val baos = new BAOS
+
     val gos = new DeflaterOutputStream(baos)
-
-    for(d <- data1){
-      gos.write(d&0xff)
-    } 
+    data1 -> gos
     gos.close
 
-    val bais = new ByteArrayInputStream(baos.toByteArray)
-    val gis = new InflaterInputStream(bais)
-
-    val data2 = Stream.continually(gis.read).
-                takeWhile(-1 !=).map(_.toByte).toArray 
+    val baos2 = new BAOS
+    new InflaterInputStream(new BAIS(baos.toByteArray)) -> baos2
+    val data2 = baos2.toByteArray 
 
     assertThat(data2.length, is(data1.length))
     assertThat(data2, is(data1))
   }
 
   @Test
-  def read_writh_with_buf = {
+  def read_write_with_buf = {
 
     (1 to 100 by 3).foreach { i =>
 
-      val buf = new Array[Byte](i)
+      implicit val buf = new Array[Byte](i)
 
       val data1 = randombuf(10240)
 
-      val baos = new ByteArrayOutputStream
+      val baos = new BAOS
+
       val gos = new DeflaterOutputStream(baos)
-
-      val datai = new ByteArrayInputStream(data1)
-      Stream.continually(datai.read(buf)).
-                        takeWhile(-1 !=).foreach(i => gos.write(buf, 0, i))
+      data1 -> gos
       gos.close
-      datai.close
 
-      val bais = new ByteArrayInputStream(baos.toByteArray)
-      val gis = new InflaterInputStream(bais)
-
-      val baos2 = new ByteArrayOutputStream
-
-      Stream.continually(gis.read(buf)).
-                        takeWhile(-1 !=).foreach(i => baos2.write(buf, 0, i))
-
+      val baos2 = new BAOS
+      new InflaterInputStream(new BAIS(baos.toByteArray)) -> baos2
       val data2 = baos2.toByteArray
 
       assertThat(data2.length, is(data1.length))
       assertThat(data2, is(data1))
+    }
+  }
+
+  private implicit def readIS(is: InputStream) = new {
+      def ->(out: OutputStream)(implicit buf: Array[Byte]) = {
+      Stream.continually(is.read(buf)).
+                         takeWhile(-1 !=).foreach(i => out.write(buf, 0, i))
+      is.close
+    }
+  }
+
+  private implicit def readArray(is: Array[Byte]) = new {
+      def ->(out: OutputStream)(implicit buf: Array[Byte]) = {
+        new BAIS(is) -> (out)
     }
   }
 
