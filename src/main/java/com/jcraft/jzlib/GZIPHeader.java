@@ -35,10 +35,15 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.jcraft.jzlib;
 
 import java.io.UnsupportedEncodingException;
+import java.util.zip.Deflater;
 
+/**
+ * @see "http://www.ietf.org/rfc/rfc1952.txt"
+ * @see "http://www.gnu.org/software/gzip/"
+ */
 public class GZIPHeader implements Cloneable {
   boolean text = false;
-  private boolean fhcrc = false;
+  private final boolean fhcrc = false;
   long time;
   int xflags;
   int os = 255;
@@ -59,11 +64,11 @@ public class GZIPHeader implements Cloneable {
   }
 
   public void setOS(int os) {
-    if((0<=os && os <=13) | os==255){
+    if((0<=os && os <=13) || os==255){
       this.os=os;
+    } else {
+        throw new IllegalArgumentException("os: "+os);
     }
-    else
-      throw new IllegalArgumentException("os: "+os);
   }
 
   public int getOS(){
@@ -81,7 +86,11 @@ public class GZIPHeader implements Cloneable {
 
   public String getName(){
     if(name==null) return "";
-    return new String(name);
+    try {
+        return new String(name, "ISO-8859-1");
+    } catch (UnsupportedEncodingException e) {
+        throw new InternalError(e.toString());
+    }
   }
 
   public void setComment(String comment) {
@@ -95,7 +104,11 @@ public class GZIPHeader implements Cloneable {
 
   public String getComment(){
     if(comment==null) return "";
-    return new String(comment);
+    try {
+        return new String(comment, "ISO-8859-1");
+    } catch (UnsupportedEncodingException e) {
+        throw new InternalError(e.toString());
+    }
   }
 
   public void setCRC(long crc){
@@ -109,30 +122,32 @@ public class GZIPHeader implements Cloneable {
   void put(Deflate d){
     int flag = 0;
     if(text){
-      flag |= 1;     // FTEXT
+      flag |= 1;     // FTEXT: Extra text
     }
     if(fhcrc){
-      flag |= 2;     // FHCRC
+      flag |= 2;     // FHCRC: Header CRC16 -- Do not set! gzip considers this flag as continuation of multi-part gzip file!
     }
     if(extra!=null){
-      flag |= 4;     // FHCRC
+      flag |= 4;     // FEXTRA: Extra field
     }
     if(name!=null){
-      flag |= 8;    // FNAME
+      flag |= 8;    // FNAME: File name
     }
     if(comment!=null){
-      flag |= 16;   // FCOMMENT
+      flag |= 16;   // FCOMMENT: File comment
     }
+    // flag bit 5: rfc: reserved; gzip: file is encrypted
+    // flag bits 6 & 7 are reserved
     int xfl = 0;
-    if(d.level == JZlib.Z_BEST_SPEED){
+    if(d.level == JZlib.Z_BEST_SPEED || d.level == JZlib.Z_NO_COMPRESSION){
       xfl |= 4;
     }
     else if (d.level == JZlib.Z_BEST_COMPRESSION){
       xfl |= 2;
     }
 
-    d.put_short((short)0x8b1f);  // ID1 ID2
-    d.put_byte((byte)8);         // CM(Compression Method)
+    d.put_short((short)0x8b1f);          // ID1 ID2
+    d.put_byte((byte)Deflater.DEFLATED); // CM(Compression Method)
     d.put_byte((byte)flag);
     d.put_byte((byte)mtime);
     d.put_byte((byte)(mtime>>8));
@@ -158,6 +173,7 @@ public class GZIPHeader implements Cloneable {
     }
   }
 
+  @Override
   public Object clone() throws CloneNotSupportedException {
     GZIPHeader gheader = (GZIPHeader)super.clone();
     byte[] tmp;
