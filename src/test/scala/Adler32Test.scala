@@ -70,8 +70,4 @@ class Adler32Test {
     buf.foreach { b => adler.update(b, 0, b.length) }
     adler.getValue
   }
-
-  private def randombuf(n: Int) = (0 to n).map{_ =>
-    scala.util.Random.nextLong.asInstanceOf[Byte] 
-  }.toArray
 }

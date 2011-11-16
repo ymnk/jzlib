@@ -8,7 +8,6 @@ import org.junit.Assert._
 import org.hamcrest.CoreMatchers._
 
 import java.io.{ByteArrayOutputStream => BAOS, ByteArrayInputStream => BAIS}
-import java.io._
 
 import JZlib._
 
@@ -86,22 +85,4 @@ class DeflaterInflaterStreamTest {
       assertThat(data2, is(data1))
     }
   }
-
-  private implicit def readIS(is: InputStream) = new {
-      def ->(out: OutputStream)(implicit buf: Array[Byte]) = {
-      Stream.continually(is.read(buf)).
-                         takeWhile(-1 !=).foreach(i => out.write(buf, 0, i))
-      is.close
-    }
-  }
-
-  private implicit def readArray(is: Array[Byte]) = new {
-      def ->(out: OutputStream)(implicit buf: Array[Byte]) = {
-        new BAIS(is) -> (out)
-    }
-  }
-
-  private def randombuf(n: Int) = (0 to n).map{_ =>
-    scala.util.Random.nextLong.asInstanceOf[Byte] 
-  }.toArray
 }
