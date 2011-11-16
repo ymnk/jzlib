@@ -25,7 +25,6 @@ class DeflaterInflaterStreamTest {
     implicit val buf = new Array[Byte](1)
 
     val baos = new BAOS
-
     val gos = new DeflaterOutputStream(baos)
     data1 -> gos
     gos.close
@@ -48,13 +47,39 @@ class DeflaterInflaterStreamTest {
       val data1 = randombuf(10240)
 
       val baos = new BAOS
-
       val gos = new DeflaterOutputStream(baos)
       data1 -> gos
       gos.close
 
       val baos2 = new BAOS
       new InflaterInputStream(new BAIS(baos.toByteArray)) -> baos2
+      val data2 = baos2.toByteArray
+
+      assertThat(data2.length, is(data1.length))
+      assertThat(data2, is(data1))
+    }
+  }
+
+  @Test
+  def read_write_with_nowrap = {
+    implicit val buf = new Array[Byte](100)
+
+    List(randombuf(10240),
+         """{"color":2,"id":"EvLd4UG.CXjnk35o1e8LrYYQfHu0h.d*SqVJPoqmzXM::Ly::Snaps::Store::Commit"}""".getBytes) foreach { data1 =>
+
+      val deflater = new Deflater(JZlib.Z_DEFAULT_COMPRESSION,
+                                  JZlib.MAX_WBITS,
+                                  true)
+
+      val inflater = new Inflater(JZlib.MAX_WBITS, true)
+
+      val baos = new BAOS
+      val gos = new DeflaterOutputStream(baos, deflater)
+      data1 -> gos
+      gos.close
+
+      val baos2 = new BAOS
+      new InflaterInputStream(new BAIS(baos.toByteArray), inflater) -> baos2
       val data2 = baos2.toByteArray
 
       assertThat(data2.length, is(data1.length))
