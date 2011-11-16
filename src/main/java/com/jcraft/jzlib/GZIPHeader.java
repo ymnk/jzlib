@@ -36,6 +36,9 @@ package com.jcraft.jzlib;
 
 import java.io.UnsupportedEncodingException;
 
+/**
+ * @see "http://www.ietf.org/rfc/rfc1952.txt"
+ */
 public class GZIPHeader implements Cloneable {
   boolean text = false;
   private boolean fhcrc = false;
@@ -59,9 +62,8 @@ public class GZIPHeader implements Cloneable {
   }
 
   public void setOS(int os) {
-    if((0<=os && os <=13) | os==255){
+    if((0<=os && os <=13) || os==255)
       this.os=os;
-    }
     else
       throw new IllegalArgumentException("os: "+os);
   }
@@ -81,7 +83,12 @@ public class GZIPHeader implements Cloneable {
 
   public String getName(){
     if(name==null) return "";
-    return new String(name);
+    try {
+      return new String(name, "ISO-8859-1");
+    }
+    catch (UnsupportedEncodingException e) {
+      throw new InternalError(e.toString());
+    }
   }
 
   public void setComment(String comment) {
@@ -95,7 +102,12 @@ public class GZIPHeader implements Cloneable {
 
   public String getComment(){
     if(comment==null) return "";
-    return new String(comment);
+    try {
+      return new String(comment, "ISO-8859-1");
+    }
+    catch (UnsupportedEncodingException e) {
+      throw new InternalError(e.toString());
+    }
   }
 
   public void setCRC(long crc){
@@ -115,7 +127,7 @@ public class GZIPHeader implements Cloneable {
       flag |= 2;     // FHCRC
     }
     if(extra!=null){
-      flag |= 4;     // FHCRC
+      flag |= 4;     // FEXTRA
     }
     if(name!=null){
       flag |= 8;    // FNAME
@@ -158,6 +170,7 @@ public class GZIPHeader implements Cloneable {
     }
   }
 
+  @Override
   public Object clone() throws CloneNotSupportedException {
     GZIPHeader gheader = (GZIPHeader)super.clone();
     byte[] tmp;
