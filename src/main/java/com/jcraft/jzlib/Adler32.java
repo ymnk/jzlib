@@ -41,26 +41,36 @@ final class Adler32 implements Checksum {
   // NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
   static final private int NMAX=5552;
 
-  private long adler=1L;
+  private long s1=1L;
+  private long s2=0L;
 
   public void reset(long init){
-    adler=init;
+    s1=init&0xffff;
+    s2=(init>>16)&0xffff;
   }
 
   public void reset(){
-    adler=1L;
+    s1=1L;
+    s2=0L;
   }
 
   public long getValue(){
-    return adler;
+    return ((s2<<16)|s1);
   }
 
   public void update(byte[] buf, int index, int len){
-    long s1=adler&0xffff;
-    long s2=(adler>>16)&0xffff;
 
-    while(len>0) {
-      int k=len<NMAX?len:NMAX;
+    if(len==1){
+      s1+=buf[index++]&0xff; s2+=s1;
+      s1%=BASE;
+      s2%=BASE;
+      return;
+    }
+
+    int len1 = len/NMAX;
+    int len2 = len%NMAX;
+    while(len1-->0) {
+      int k=NMAX;
       len-=k;
       while(k-->0){
 	s1+=buf[index++]&0xff; s2+=s1;
@@ -68,12 +78,20 @@ final class Adler32 implements Checksum {
       s1%=BASE;
       s2%=BASE;
     }
-    adler=(s2<<16)|s1;
+
+    int k=len2;
+    len-=k;
+    while(k-->0){
+      s1+=buf[index++]&0xff; s2+=s1;
+    }
+    s1%=BASE;
+    s2%=BASE;
   }
 
   public Adler32 copy(){
     Adler32 foo = new Adler32();
-    foo.adler = this.adler;
+    foo.s1 = this.s1;
+    foo.s2 = this.s2;
     return foo;
   }
 
@@ -97,16 +115,16 @@ final class Adler32 implements Checksum {
     return sum1 | (sum2 << 16);
   }
 
-  /*
+/*
   private java.util.zip.Adler32 adler=new java.util.zip.Adler32();
-  void adler32(byte[] buf, int index, int len){
+  public void update(byte[] buf, int index, int len){
     if(buf==null) {adler.reset();}
     else{adler.update(buf, index, len);}
   }
-  void reset(){
+  public void reset(){
     adler.reset();
   }
-  void reset(long init){
+  public void reset(long init){
     if(init==1L){
       adler.reset();
     }
@@ -114,8 +132,8 @@ final class Adler32 implements Checksum {
       System.err.println("unsupported operation");
     }
   }
-  long getValue(){
+  public long getValue(){
     return adler.getValue();
   }
-  */
+*/
 }
