@@ -60,6 +60,33 @@ class DeflaterInflaterStreamTest {
   }
 
   @Test
+  def read_write_with_buf_nowrap = {
+
+    (1 to 100 by 3).foreach { i =>
+
+      implicit val buf = new Array[Byte](i)
+
+      val data1 = randombuf(10240)
+
+      val baos = new BAOS
+      val deflater = new Deflater(JZlib.Z_DEFAULT_COMPRESSION,
+                                 JZlib.DEF_WBITS,
+                                 true)
+      val gos = new DeflaterOutputStream(baos, deflater)
+      data1 -> gos
+      gos.close
+
+      val baos2 = new BAOS
+      val inflater = new Inflater(JZlib.DEF_WBITS, true)
+      new InflaterInputStream(new BAIS(baos.toByteArray), inflater) -> baos2
+      val data2 = baos2.toByteArray
+
+      assertThat(data2.length, is(data1.length))
+      assertThat(data2, is(data1))
+    }
+  }
+
+  @Test
   def read_write_with_nowrap = {
     implicit val buf = new Array[Byte](100)
 
