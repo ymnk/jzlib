@@ -81,7 +81,15 @@ final class InfBlocks{
   int[] bb=new int[1]; // bit length tree depth 
   int[] tb=new int[1]; // bit length decoding tree 
 
-  InfCodes codes=new InfCodes();      // if CODES, current state 
+  int[] bl=new int[1];
+  int[] bd=new int[1];
+
+  int[][] tl=new int[1][];
+  int[][] td=new int[1][];
+  int[] tli=new int[1]; // tl_index
+  int[] tdi=new int[1]; // td_index
+
+  private final InfCodes codes;      // if CODES, current state 
 
   int last;            // true if this block is the last block 
 
@@ -95,18 +103,22 @@ final class InfBlocks{
   int write;           // window write pointer 
   private boolean check;
 
-  InfTree inftree=new InfTree();
+  private final InfTree inftree=new InfTree();
 
-  InfBlocks(ZStream z, int w){
+  private final Inflater z; 
+
+  InfBlocks(Inflater z, int w){
+    this.z=z;
+    this.codes=new InfCodes(this.z, this);
     hufts=new int[MANY*3];
     window=new byte[w];
     end=w;
     this.check = (z.istate.wrap==0) ? false : true;
     mode = TYPE;
-    reset(z);
+    reset();
   }
 
-  void reset(ZStream z){
+  void reset(){
     if(mode==BTREE || mode==DTREE){
     }
     if(mode==CODES){
@@ -121,7 +133,7 @@ final class InfBlocks{
     }
   }
 
-  int proc(ZStream z, int r){
+  int proc(int r){
     int t;              // temporary storage
     int b;              // bit buffer
     int k;              // bits in bit buffer
@@ -148,7 +160,7 @@ final class InfBlocks{
 	    z.avail_in=n;
 	    z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	    write=q;
-	    return inflate_flush(z,r);
+	    return inflate_flush(r);
 	  };
 	  n--;
 	  b|=(z.next_in[p++]&0xff)<<k;
@@ -166,15 +178,8 @@ final class InfBlocks{
           mode = LENS;                  // get length of stored block
           break;
         case 1:                         // fixed
-          {
-            int[] bl=new int[1];
-	    int[] bd=new int[1];
-            int[][] tl=new int[1][];
-	    int[][] td=new int[1][];
-
-	    InfTree.inflate_trees_fixed(bl, bd, tl, td, z);
-            codes.init(bl[0], bd[0], tl[0], 0, td[0], 0, z);
-          }
+          InfTree.inflate_trees_fixed(bl, bd, tl, td, z);
+          codes.init(bl[0], bd[0], tl[0], 0, td[0], 0);
 
           {b>>>=(3);k-=(3);}
 
@@ -196,7 +201,7 @@ final class InfBlocks{
 	  bitb=b; bitk=k; 
 	  z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	  write=q;
-	  return inflate_flush(z,r);
+	  return inflate_flush(r);
 	}
 	break;
       case LENS:
@@ -210,7 +215,7 @@ final class InfBlocks{
 	    z.avail_in=n;
 	    z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	    write=q;
-	    return inflate_flush(z,r);
+	    return inflate_flush(r);
 	  };
 	  n--;
 	  b|=(z.next_in[p++]&0xff)<<k;
@@ -225,7 +230,7 @@ final class InfBlocks{
 	  bitb=b; bitk=k; 
 	  z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	  write=q;
-	  return inflate_flush(z,r);
+	  return inflate_flush(r);
 	}
 	left = (b & 0xffff);
 	b = k = 0;                       // dump bits
@@ -236,7 +241,7 @@ final class InfBlocks{
 	  bitb=b; bitk=k; 
 	  z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	  write=q;
-	  return inflate_flush(z,r);
+	  return inflate_flush(r);
 	}
 
 	if(m==0){
@@ -245,7 +250,7 @@ final class InfBlocks{
 	  }
 	  if(m==0){
 	    write=q; 
-	    r=inflate_flush(z,r);
+	    r=inflate_flush(r);
 	    q=write;m=(int)(q<read?read-q-1:end-q);
 	    if(q==end&&read!=0){
 	      q=0; m=(int)(q<read?read-q-1:end-q);
@@ -254,7 +259,7 @@ final class InfBlocks{
 	      bitb=b; bitk=k; 
 	      z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	      write=q;
-	      return inflate_flush(z,r);
+	      return inflate_flush(r);
 	    }
 	  }
 	}
@@ -281,7 +286,7 @@ final class InfBlocks{
 	    z.avail_in=n;
 	    z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	    write=q;
-	    return inflate_flush(z,r);
+	    return inflate_flush(r);
 	  };
 	  n--;
 	  b|=(z.next_in[p++]&0xff)<<k;
@@ -298,7 +303,7 @@ final class InfBlocks{
 	    bitb=b; bitk=k; 
 	    z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	    write=q;
-	    return inflate_flush(z,r);
+	    return inflate_flush(r);
 	  }
 	t = 258 + (t & 0x1f) + ((t >> 5) & 0x1f);
 	if(blens==null || blens.length<t){
@@ -323,7 +328,7 @@ final class InfBlocks{
 	      z.avail_in=n;
 	      z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	      write=q;
-	      return inflate_flush(z,r);
+	      return inflate_flush(r);
 	    };
 	    n--;
 	    b|=(z.next_in[p++]&0xff)<<k;
@@ -351,7 +356,7 @@ final class InfBlocks{
 	  bitb=b; bitk=k; 
 	  z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	  write=q;
-	  return inflate_flush(z,r);
+	  return inflate_flush(r);
 	}
 
 	index = 0;
@@ -377,7 +382,7 @@ final class InfBlocks{
 	      z.avail_in=n;
 	      z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	      write=q;
-	      return inflate_flush(z,r);
+	      return inflate_flush(r);
 	    };
 	    n--;
 	    b|=(z.next_in[p++]&0xff)<<k;
@@ -408,7 +413,7 @@ final class InfBlocks{
 		z.avail_in=n;
 		z.total_in+=p-z.next_in_index;z.next_in_index=p;
 		write=q;
-		return inflate_flush(z,r);
+		return inflate_flush(r);
 	      };
 	      n--;
 	      b|=(z.next_in[p++]&0xff)<<k;
@@ -433,7 +438,7 @@ final class InfBlocks{
 	      bitb=b; bitk=k; 
 	      z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	      write=q;
-	      return inflate_flush(z,r);
+	      return inflate_flush(r);
 	    }
 
 	    c = c == 16 ? blens[i-1] : 0;
@@ -447,17 +452,12 @@ final class InfBlocks{
 
 	tb[0]=-1;
 	{
-	  int[] bl=new int[1];
-	  int[] bd=new int[1];
-	  int[] tl=new int[1];
-	  int[] td=new int[1];
 	  bl[0] = 9;         // must be <= 9 for lookahead assumptions
 	  bd[0] = 6;         // must be <= 9 for lookahead assumptions
-
 	  t = table;
 	  t = inftree.inflate_trees_dynamic(257 + (t & 0x1f), 
 					    1 + ((t >> 5) & 0x1f),
-					    blens, bl, bd, tl, td, hufts, z);
+					    blens, bl, bd, tli, tdi, hufts, z);
 
 	  if (t != Z_OK){
 	    if (t == Z_DATA_ERROR){
@@ -469,9 +469,9 @@ final class InfBlocks{
 	    bitb=b; bitk=k; 
 	    z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	    write=q;
-	    return inflate_flush(z,r);
+	    return inflate_flush(r);
 	  }
-	  codes.init(bl[0], bd[0], hufts, tl[0], hufts, td[0], z);
+	  codes.init(bl[0], bd[0], hufts, tli[0], hufts, tdi[0]);
 	}
 	mode = CODES;
       case CODES:
@@ -479,8 +479,8 @@ final class InfBlocks{
 	z.avail_in=n; z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	write=q;
 
-	if ((r = codes.proc(this, z, r)) != Z_STREAM_END){
-	  return inflate_flush(z, r);
+	if ((r = codes.proc(r)) != Z_STREAM_END){
+	  return inflate_flush(r);
 	}
 	r = Z_OK;
 	codes.free(z);
@@ -495,13 +495,13 @@ final class InfBlocks{
 	mode = DRY;
       case DRY:
 	write=q; 
-	r=inflate_flush(z, r); 
+	r=inflate_flush(r); 
 	q=write; m=(int)(q<read?read-q-1:end-q);
 	if (read != write){
 	  bitb=b; bitk=k; 
 	  z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	  write=q;
-	  return inflate_flush(z, r);
+	  return inflate_flush(r);
 	}
 	mode = DONE;
       case DONE:
@@ -510,14 +510,14 @@ final class InfBlocks{
 	bitb=b; bitk=k; 
 	z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	write=q;
-	return inflate_flush(z, r);
+	return inflate_flush(r);
       case BAD:
 	r = Z_DATA_ERROR;
 
 	bitb=b; bitk=k; 
 	z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	write=q;
-	return inflate_flush(z, r);
+	return inflate_flush(r);
 
       default:
 	r = Z_STREAM_ERROR;
@@ -525,13 +525,13 @@ final class InfBlocks{
 	bitb=b; bitk=k; 
 	z.avail_in=n;z.total_in+=p-z.next_in_index;z.next_in_index=p;
 	write=q;
-	return inflate_flush(z, r);
+	return inflate_flush(r);
       }
     }
   }
 
-  void free(ZStream z){
-    reset(z);
+  void free(){
+    reset();
     window=null;
     hufts=null;
     //ZFREE(z, s);
@@ -549,7 +549,7 @@ final class InfBlocks{
   }
 
   // copy as much as possible from the sliding window to the output area
-  int inflate_flush(ZStream z, int r){
+  int inflate_flush(int r){
     int n;
     int p;
     int q;
@@ -560,15 +560,15 @@ final class InfBlocks{
 
     // compute number of bytes to copy as far as end of window
     n = (int)((q <= write ? write : end) - q);
-    if (n > z.avail_out) n = z.avail_out;
-    if (n!=0 && r == Z_BUF_ERROR) r = Z_OK;
+    if(n > z.avail_out) n = z.avail_out;
+    if(n!=0 && r == Z_BUF_ERROR) r = Z_OK;
 
     // update counters
     z.avail_out -= n;
     z.total_out += n;
 
     // update check information
-    if(check){
+    if(check && n>0){
       z.adler.update(window, q, n);
     }
 
@@ -594,7 +594,7 @@ final class InfBlocks{
       z.total_out += n;
 
       // update check information
-      if(check){
+      if(check && n>0){
 	z.adler.update(window, q, n);
       }
 

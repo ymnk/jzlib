@@ -103,7 +103,7 @@ final class Inflate{
 
   InfBlocks blocks;     // current inflate_blocks state
 
-  final ZStream z;
+  private final Inflater z;
 
   private int flags; 
 
@@ -119,18 +119,18 @@ final class Inflate{
     z.msg = null;
     this.mode = HEAD;
     this.need_bytes = -1;
-    this.blocks.reset(z);
+    this.blocks.reset();
     return Z_OK;
   }
 
   int inflateEnd(){
     if(blocks != null){
-      blocks.free(z);
+      blocks.free();
     }
     return Z_OK;
   }
 
-  Inflate(ZStream z){
+  Inflate(Inflater z){
     this.z=z;
   }
 
@@ -154,7 +154,7 @@ final class Inflate{
       return Z_STREAM_ERROR;
     }
     if(blocks != null && wbits != w){
-      blocks.free(z);
+      blocks.free();
       blocks=null;
     }
 
@@ -192,7 +192,7 @@ final class Inflate{
           break;
         } 
 
-        try { r=readBytes(z, 2, r, f); }
+        try { r=readBytes(2, r, f); }
         catch(Return e){ return e.r; }
 
         if((wrap&2)!=0 && this.need == 0x8b1fL) {   // gzip header
@@ -285,7 +285,7 @@ final class Inflate{
         this.marker = 0;       // can try inflateSync
         return Z_STREAM_ERROR;
       case BLOCKS:
-        r = this.blocks.proc(z, r);
+        r = this.blocks.proc(r);
         if(r == Z_DATA_ERROR){
           this.mode = BAD;
           this.marker = 0;     // can try inflateSync
@@ -299,7 +299,7 @@ final class Inflate{
         }
         r = f;
         this.was=z.adler.getValue();
-        this.blocks.reset(z);
+        this.blocks.reset();
         if(this.wrap==0){
           this.mode=DONE;
           break;
@@ -357,7 +357,7 @@ final class Inflate{
       case LENGTH:
         if (wrap!=0 && flags!=0) {
 
-          try { r=readBytes(z, 4, r, f); }
+          try { r=readBytes(4, r, f); }
           catch(Return e){ return e.r; }
 
           if(z.msg!=null && z.msg.equals("incorrect data check")){
@@ -389,7 +389,7 @@ final class Inflate{
 
       case FLAGS:
 
-        try { r=readBytes(z, 2, r, f); }
+        try { r=readBytes(2, r, f); }
         catch(Return e){ return e.r; }
 
         flags = ((int)this.need)&0xffff;
@@ -412,7 +412,7 @@ final class Inflate{
         this.mode = TIME;
 
       case TIME:
-        try { r=readBytes(z, 4, r, f); }
+        try { r=readBytes(4, r, f); }
         catch(Return e){ return e.r; }
         if(gheader!=null)
           gheader.time = this.need;
@@ -421,7 +421,7 @@ final class Inflate{
         }
         this.mode = OS;
       case OS:
-        try { r=readBytes(z, 2, r, f); }
+        try { r=readBytes(2, r, f); }
         catch(Return e){ return e.r; }
         if(gheader!=null){
           gheader.xflags = ((int)this.need)&0xff;
@@ -433,7 +433,7 @@ final class Inflate{
         this.mode = EXLEN;
       case EXLEN:
         if ((flags & 0x0400)!=0) {
-          try { r=readBytes(z, 2, r, f); }
+          try { r=readBytes(2, r, f); }
           catch(Return e){ return e.r; }
           if(gheader!=null){
             gheader.extra = new byte[((int)this.need)&0xffff];
@@ -450,7 +450,7 @@ final class Inflate{
       case EXTRA:
         if ((flags & 0x0400)!=0) {
           try { 
-            r=readBytes(z, r, f);
+            r=readBytes(r, f);
             if(gheader!=null){
               byte[] foo = tmp_string.toByteArray();
               tmp_string=null;
@@ -473,7 +473,7 @@ final class Inflate{
       case NAME:
 	if ((flags & 0x0800)!=0) {
           try { 
-            r=readString(z, r, f);
+            r=readString(r, f);
             if(gheader!=null){
               gheader.name=tmp_string.toByteArray();
             }
@@ -488,7 +488,7 @@ final class Inflate{
       case COMMENT:
         if ((flags & 0x1000)!=0) {
           try { 
-            r=readString(z, r, f);
+            r=readString(r, f);
             if(gheader!=null){
               gheader.comment=tmp_string.toByteArray();
             }
@@ -502,7 +502,7 @@ final class Inflate{
         this.mode = HCRC;
       case HCRC:
 	if ((flags & 0x0200)!=0) {
-          try { r=readBytes(z, 2, r, f); }
+          try { r=readBytes(2, r, f); }
           catch(Return e){ return e.r; }
           if(gheader!=null){
             gheader.hcrc=(int)(this.need&0xffff);
@@ -616,7 +616,7 @@ final class Inflate{
     return this.blocks.sync_point();
   }
 
-  private int readBytes(ZStream z, int n, int r, int f) throws Return{
+  private int readBytes(int n, int r, int f) throws Return{
     if(need_bytes == -1){
       need_bytes=n;
       this.need=0;
@@ -643,7 +643,7 @@ final class Inflate{
   }
 
   private java.io.ByteArrayOutputStream tmp_string = null;
-  private int readString(ZStream z, int r, int f) throws Return{
+  private int readString(int r, int f) throws Return{
     if(tmp_string == null){
       tmp_string=new java.io.ByteArrayOutputStream();
     }
@@ -659,7 +659,7 @@ final class Inflate{
     return r;
   }
 
-  private int readBytes(ZStream z, int r, int f) throws Return{
+  private int readBytes(int r, int f) throws Return{
     if(tmp_string == null){
       tmp_string=new java.io.ByteArrayOutputStream();
     }
