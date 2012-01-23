@@ -34,7 +34,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.jcraft.jzlib;
 
-final class Adler32 implements Checksum {
+final public class Adler32 implements Checksum {
 
   // largest prime smaller than 65536
   static final private int BASE=65521; 

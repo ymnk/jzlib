@@ -34,7 +34,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.jcraft.jzlib;
 
-final class CRC32 implements Checksum, Cloneable {
+final public class CRC32 implements Checksum {
 
   /*
    *  The following logic has come from RFC1952.
