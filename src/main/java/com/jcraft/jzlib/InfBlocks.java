@@ -105,9 +105,9 @@ final class InfBlocks{
 
   private final InfTree inftree=new InfTree();
 
-  private final Inflater z; 
+  private final ZStream z; 
 
-  InfBlocks(Inflater z, int w){
+  InfBlocks(ZStream z, int w){
     this.z=z;
     this.codes=new InfCodes(this.z, this);
     hufts=new int[MANY*3];

@@ -103,7 +103,7 @@ final class Inflate{
 
   InfBlocks blocks;     // current inflate_blocks state
 
-  private final Inflater z;
+  private final ZStream z;
 
   private int flags; 
 
@@ -130,7 +130,7 @@ final class Inflate{
     return Z_OK;
   }
 
-  Inflate(Inflater z){
+  Inflate(ZStream z){
     this.z=z;
   }
 

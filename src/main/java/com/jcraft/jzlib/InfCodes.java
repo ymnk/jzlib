@@ -89,9 +89,9 @@ final class InfCodes{
   int[] dtree;          // distance tree
   int dtree_index;      // distance tree
 
-  private final Inflater z;
+  private final ZStream z;
   private final InfBlocks s;
-  InfCodes(Inflater z, InfBlocks s){
+  InfCodes(ZStream z, InfBlocks s){
     this.z=z; 
     this.s=s; 
   }

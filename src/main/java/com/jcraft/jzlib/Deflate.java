@@ -169,7 +169,7 @@ final class Deflate implements Cloneable {
 
   static final private int END_BLOCK=256;
 
-  Deflater strm;        // pointer back to this zlib stream
+  ZStream strm;        // pointer back to this zlib stream
   int status;           // as the name implies
   byte[] pending_buf;   // output still pending
   int pending_buf_size; // size of pending_buf
@@ -319,7 +319,7 @@ final class Deflate implements Cloneable {
 
   GZIPHeader gheader = null;
 
-  Deflate(Deflater strm){
+  Deflate(ZStream strm){
     this.strm=strm;
     dyn_ltree=new short[HEAP_SIZE*2];
     dyn_dtree=new short[(2*D_CODES+1)*2]; // distance tree
@@ -1656,7 +1656,7 @@ final class Deflate implements Cloneable {
     return pending != 0 ? Z_OK : Z_STREAM_END;
   }
 
-  static int deflateCopy(Deflater dest, Deflater src){
+  static int deflateCopy(ZStream dest, ZStream src){
 
     if(src.dstate == null){
       return Z_STREAM_ERROR;

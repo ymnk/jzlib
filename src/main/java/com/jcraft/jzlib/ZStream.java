@@ -101,7 +101,7 @@ public class ZStream{
   }
 
   public int inflateInit(int w, boolean nowrap){
-    istate=new Inflate((Inflater)this);
+    istate=new Inflate(this);
     return istate.inflateInit(nowrap?-w:w);
   }
 
@@ -144,11 +144,11 @@ public class ZStream{
     return deflateInit(level, bits, false);
   }
   public int deflateInit(int level, int bits, int memlevel){
-    dstate=new Deflate((Deflater)this);
+    dstate=new Deflate(this);
     return dstate.deflateInit(level, bits, memlevel);
   }
   public int deflateInit(int level, int bits, boolean nowrap){
-    dstate=new Deflate((Deflater)this);
+    dstate=new Deflate(this);
     return dstate.deflateInit(level, nowrap?-bits:bits);
   }
   public int deflate(int flush){
