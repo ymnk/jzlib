@@ -171,4 +171,9 @@ final public class CRC32 implements Checksum {
     return foo;
   }
 
+  public static int[] getCRCTable(){
+    int[] tmp = new int[crc_table.length];
+    System.arraycopy(crc_table, 0, tmp, tmp.length);
+    return tmp;
+  }
 }

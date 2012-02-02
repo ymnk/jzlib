@@ -40,6 +40,23 @@ import java.io.UnsupportedEncodingException;
  * @see "http://www.ietf.org/rfc/rfc1952.txt"
  */
 public class GZIPHeader implements Cloneable {
+
+  public static final byte OS_MSDOS = (byte) 0x00;
+  public static final byte OS_AMIGA = (byte) 0x01;
+  public static final byte OS_VMS = (byte) 0x02;
+  public static final byte OS_UNIX = (byte) 0x03;
+  public static final byte OS_ATARI = (byte) 0x05;
+  public static final byte OS_OS2 = (byte) 0x06;
+  public static final byte OS_MACOS = (byte) 0x07;
+  public static final byte OS_TOPS20 = (byte) 0x0a;
+  public static final byte OS_WIN32 = (byte) 0x0b;
+  public static final byte OS_VMCMS = (byte) 0x04;
+  public static final byte OS_ZSYSTEM = (byte) 0x08;
+  public static final byte OS_CPM = (byte) 0x09;
+  public static final byte OS_QDOS = (byte) 0x0c;
+  public static final byte OS_RISCOS = (byte) 0x0d;
+  public static final byte OS_UNKNOWN = (byte) 0xff;
+
   boolean text = false;
   private boolean fhcrc = false;
   long time;
