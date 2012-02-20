@@ -68,6 +68,11 @@ final public class JZlib{
   static final public int Z_BUF_ERROR=-5;
   static final public int Z_VERSION_ERROR=-6;
 
+  // The three kinds of block type
+  static final public byte Z_BINARY = 0;
+  static final public byte Z_ASCII = 1;
+  static final public byte Z_UNKNOWN = 2;
+
   public static long adler32_combine(long adler1, long adler2, long len2){
     return Adler32.combine(adler1, adler2, len2);
   }

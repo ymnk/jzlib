@@ -34,7 +34,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.jcraft.jzlib;
 
-final class CRC32 implements Checksum, Cloneable {
+final public class CRC32 implements Checksum {
 
   /*
    *  The following logic has come from RFC1952.
@@ -171,4 +171,9 @@ final class CRC32 implements Checksum, Cloneable {
     return foo;
   }
 
+  public static int[] getCRC32Table(){
+    int[] tmp = new int[crc_table.length];
+    System.arraycopy(crc_table, 0, tmp, 0, tmp.length);
+    return tmp;
+  }
 }

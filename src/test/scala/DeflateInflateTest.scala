@@ -334,5 +334,4 @@ class DeflateInflateTest {
 
     assertThat(actual, is(data)) 
   }
-
 }

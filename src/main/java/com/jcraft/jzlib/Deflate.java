@@ -169,7 +169,7 @@ final class Deflate implements Cloneable {
 
   static final private int END_BLOCK=256;
 
-  ZStream strm;   // pointer back to this zlib stream
+  ZStream strm;        // pointer back to this zlib stream
   int status;           // as the name implies
   byte[] pending_buf;   // output still pending
   int pending_buf_size; // size of pending_buf

@@ -170,7 +170,12 @@ public class InflaterInputStream extends FilterInputStream {
     if (closed) { throw new IOException("Stream closed"); }
     int len = in.read(buf, 0, buf.length);
     if (len == -1) {
-      if(inflater.istate.was != -1){  // in reading trailer
+      if(inflater.istate.wrap == 0 &&
+         !inflater.finished()){
+        buf[0]=0;
+        len=1;
+      }
+      else if(inflater.istate.was != -1){  // in reading trailer
         throw new IOException("footer is not found");
       }
       else{

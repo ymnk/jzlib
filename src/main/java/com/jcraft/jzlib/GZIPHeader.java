@@ -36,7 +36,27 @@ package com.jcraft.jzlib;
 
 import java.io.UnsupportedEncodingException;
 
+/**
+ * @see "http://www.ietf.org/rfc/rfc1952.txt"
+ */
 public class GZIPHeader implements Cloneable {
+
+  public static final byte OS_MSDOS = (byte) 0x00;
+  public static final byte OS_AMIGA = (byte) 0x01;
+  public static final byte OS_VMS = (byte) 0x02;
+  public static final byte OS_UNIX = (byte) 0x03;
+  public static final byte OS_ATARI = (byte) 0x05;
+  public static final byte OS_OS2 = (byte) 0x06;
+  public static final byte OS_MACOS = (byte) 0x07;
+  public static final byte OS_TOPS20 = (byte) 0x0a;
+  public static final byte OS_WIN32 = (byte) 0x0b;
+  public static final byte OS_VMCMS = (byte) 0x04;
+  public static final byte OS_ZSYSTEM = (byte) 0x08;
+  public static final byte OS_CPM = (byte) 0x09;
+  public static final byte OS_QDOS = (byte) 0x0c;
+  public static final byte OS_RISCOS = (byte) 0x0d;
+  public static final byte OS_UNKNOWN = (byte) 0xff;
+
   boolean text = false;
   private boolean fhcrc = false;
   long time;
@@ -59,9 +79,8 @@ public class GZIPHeader implements Cloneable {
   }
 
   public void setOS(int os) {
-    if((0<=os && os <=13) | os==255){
+    if((0<=os && os <=13) || os==255)
       this.os=os;
-    }
     else
       throw new IllegalArgumentException("os: "+os);
   }
@@ -81,7 +100,12 @@ public class GZIPHeader implements Cloneable {
 
   public String getName(){
     if(name==null) return "";
-    return new String(name);
+    try {
+      return new String(name, "ISO-8859-1");
+    }
+    catch (UnsupportedEncodingException e) {
+      throw new InternalError(e.toString());
+    }
   }
 
   public void setComment(String comment) {
@@ -95,7 +119,12 @@ public class GZIPHeader implements Cloneable {
 
   public String getComment(){
     if(comment==null) return "";
-    return new String(comment);
+    try {
+      return new String(comment, "ISO-8859-1");
+    }
+    catch (UnsupportedEncodingException e) {
+      throw new InternalError(e.toString());
+    }
   }
 
   public void setCRC(long crc){
@@ -115,7 +144,7 @@ public class GZIPHeader implements Cloneable {
       flag |= 2;     // FHCRC
     }
     if(extra!=null){
-      flag |= 4;     // FHCRC
+      flag |= 4;     // FEXTRA
     }
     if(name!=null){
       flag |= 8;    // FNAME
@@ -158,6 +187,7 @@ public class GZIPHeader implements Cloneable {
     }
   }
 
+  @Override
   public Object clone() throws CloneNotSupportedException {
     GZIPHeader gheader = (GZIPHeader)super.clone();
     byte[] tmp;
