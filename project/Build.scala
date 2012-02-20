@@ -4,7 +4,7 @@ import Keys._
 object BuildSettings {
   val buildName = "jzlib"
   val buildOrganization = "JCraft,Inc."
-  val buildVersion = "1.1.0"
+  val buildVersion = "1.1.1"
   val buildScalaVersion = "2.9.1"
 
   val buildSettings = Defaults.defaultSettings ++ Seq (
