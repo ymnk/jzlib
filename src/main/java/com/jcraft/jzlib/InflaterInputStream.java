@@ -43,7 +43,11 @@ public class InflaterInputStream extends FilterInputStream {
   protected static final int DEFAULT_BUFSIZE = 512;
 
   public InflaterInputStream(InputStream in) throws IOException {
-    this(in, new Inflater());
+    this(in, false);
+  }
+
+  public InflaterInputStream(InputStream in, boolean nowrap) throws IOException {
+    this(in, new Inflater(nowrap));
     myinflater = true;
   }
 

@@ -57,13 +57,16 @@ final public class Inflater extends ZStream{
   static final private int Z_BUF_ERROR=-5;
   static final private int Z_VERSION_ERROR=-6;
 
-  public Inflater() {
-    super();
-    init();
+  public Inflater() throws GZIPException {
+    this(DEF_WBITS, false);
   }
 
   public Inflater(int w) throws GZIPException {
     this(w, false);
+  }
+
+  public Inflater(boolean nowrap) throws GZIPException {
+    this(DEF_WBITS, nowrap);
   }
 
   public Inflater(int w, boolean nowrap) throws GZIPException {
