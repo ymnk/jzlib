@@ -11,7 +11,7 @@ import java.io.{ByteArrayOutputStream => BAOS, ByteArrayInputStream => BAIS}
 import JZlib._
 
 @RunWith(classOf[JUnit4])
-class WrapperTypeTest {
+class HeaderTypeTest {
   val data = "hello, hello!".getBytes
 
   val comprLen = 40000
@@ -103,7 +103,7 @@ class WrapperTypeTest {
 
   private def inflate(compr: Array[Byte],
                       uncompr: Array[Byte],
-                      w: WrapperType) = {
+                      w: HeaderType) = {
     val inflater = new ZStream
     err = inflater.inflateInit(w)
     assertThat(err, is(Z_OK))
@@ -125,7 +125,7 @@ class WrapperTypeTest {
 
   private def inflate_fail(compr: Array[Byte],
                            uncompr: Array[Byte],
-                           w: WrapperType) = {
+                           w: HeaderType) = {
     val inflater = new ZStream
 
     err = inflater.inflateInit(w)

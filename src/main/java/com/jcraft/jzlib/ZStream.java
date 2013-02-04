@@ -99,10 +99,10 @@ public class ZStream{
   public int inflateInit(int w){
     return inflateInit(w, false);
   }
-  public int inflateInit(JZlib.WrapperType wrapperType) {
+  public int inflateInit(JZlib.HeaderType wrapperType) {
     return inflateInit(DEF_WBITS, wrapperType);
   }
-  public int inflateInit(int w, JZlib.WrapperType wrapperType) {
+  public int inflateInit(int w, JZlib.HeaderType wrapperType) {
     boolean nowrap = false;
     if(wrapperType == JZlib.W_NONE){
       nowrap = true;
@@ -160,7 +160,7 @@ public class ZStream{
   public int deflateInit(int level, int bits){
     return deflateInit(level, bits, false);
   }
-  public int deflateInit(int level, int bits, int memlevel, JZlib.WrapperType wrapperType){
+  public int deflateInit(int level, int bits, int memlevel, JZlib.HeaderType wrapperType){
     if(bits < 9 || bits > 15){
       return Z_STREAM_ERROR;
     }
