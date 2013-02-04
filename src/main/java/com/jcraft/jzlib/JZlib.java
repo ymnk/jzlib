@@ -41,7 +41,7 @@ final public class JZlib{
   static final public int MAX_WBITS=15;        // 32K LZ77 window
   static final public int DEF_WBITS=MAX_WBITS;
 
-  enum WrapperType {
+  public enum WrapperType {
     NONE, ZLIB, GZIP, ANY
   }
 
