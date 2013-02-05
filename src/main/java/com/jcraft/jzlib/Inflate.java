@@ -233,6 +233,8 @@ final class Inflate{
            (this.method&0xf)!=Z_DEFLATED){
           if(wrap == 4){
             z.next_in_index -= 2;
+            z.avail_in += 2;
+            z.total_in -= 2;
             wrap = 0;
             this.mode = BLOCKS;
             break;
