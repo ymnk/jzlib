@@ -62,6 +62,17 @@ final public class Inflater extends ZStream{
     init();
   }
 
+  public Inflater(JZlib.HeaderType headerType) throws GZIPException {
+    this(DEF_WBITS, headerType);
+  }
+
+  public Inflater(int w, JZlib.HeaderType headerType) throws GZIPException {
+    super();
+    int ret = init(w, headerType);
+    if(ret!=Z_OK)
+      throw new GZIPException(ret+": "+msg);
+  }
+
   public Inflater(int w) throws GZIPException {
     this(w, false);
   }
@@ -81,6 +92,26 @@ final public class Inflater extends ZStream{
 
   public int init(){
     return init(DEF_WBITS);
+  }
+
+  public int init(JZlib.HeaderType headerType){
+    return init(DEF_WBITS, headerType);
+  }
+
+  public int init(int w, JZlib.HeaderType headerType) {
+    boolean nowrap = false;
+    if(headerType == JZlib.W_NONE){
+      nowrap = true;
+    }
+    else if(headerType == JZlib.W_GZIP) {
+      w += 16;
+    }
+    else if(headerType == JZlib.W_ANY) {
+      w |= Inflate.INFLATE_ANY;
+    }
+    else if(headerType == JZlib.W_ZLIB) {
+    }
+    return init(w, nowrap);
   }
 
   public int init(boolean nowrap){

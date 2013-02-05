@@ -29,6 +29,32 @@ class HeaderTypeTest {
   }
 
   @Test
+  def DeflterInflaterStream = {
+    implicit val buf = compr
+
+    val tests = List((W_ZLIB, List(W_ZLIB, W_ANY)),
+                     (W_GZIP, List(W_GZIP, W_ANY)),
+                     (W_NONE, List(W_NONE, W_ANY)))
+
+    tests foreach { case (iflag, dflags) => 
+      val baos = new BAOS
+      val deflater = new Deflater(Z_DEFAULT_COMPRESSION, DEF_WBITS, 9, iflag)
+      val gos = new DeflaterOutputStream(baos, deflater)
+      data -> gos
+      gos.close
+
+      dflags foreach { w =>
+        val baos2 = new BAOS
+        val inflater = new Inflater(w)
+        new InflaterInputStream(new BAIS(baos.toByteArray), inflater) -> baos2
+        val data1 = baos2.toByteArray
+        assertThat(data1.length, is(data.length))
+        assertThat(data1, is(data))
+      } 
+    }
+  } 
+
+  @Test
   def w_zlib = {
     val deflater = new ZStream
 
