@@ -20,6 +20,11 @@ class HeaderTypeTest {
   var uncompr:Array[Byte] = _
   var err: Int = _
 
+  val cases =      /* success */        /* fail */ 
+    List((W_ZLIB, (List(W_ZLIB, W_ANY), List(W_GZIP, W_NONE))),
+         (W_GZIP, (List(W_GZIP, W_ANY), List(W_ZLIB, W_NONE))),
+         (W_NONE, (List(W_NONE, W_ANY), List(W_ZLIB, W_GZIP))))
+
   @Before
   def setUp = {
     compr = new Array[Byte](comprLen)
@@ -32,86 +37,59 @@ class HeaderTypeTest {
   def DeflterInflaterStream = {
     implicit val buf = compr
 
-    val tests = List((W_ZLIB, List(W_ZLIB, W_ANY)),
-                     (W_GZIP, List(W_GZIP, W_ANY)),
-                     (W_NONE, List(W_NONE, W_ANY)))
-
-    tests foreach { case (iflag, dflags) => 
+    cases foreach { case (iflag, (good, bad)) => 
       val baos = new BAOS
       val deflater = new Deflater(Z_DEFAULT_COMPRESSION, DEF_WBITS, 9, iflag)
       val gos = new DeflaterOutputStream(baos, deflater)
       data -> gos
       gos.close
 
-      dflags foreach { w =>
+      val deflated = baos.toByteArray
+
+      good map { w =>
         val baos2 = new BAOS
         val inflater = new Inflater(w)
-        new InflaterInputStream(new BAIS(baos.toByteArray), inflater) -> baos2
+        new InflaterInputStream(new BAIS(deflated), inflater) -> baos2
         val data1 = baos2.toByteArray
         assertThat(data1.length, is(data.length))
         assertThat(data1, is(data))
+        import inflater._
+        (avail_in, avail_out, total_in, total_out)
+      } reduceLeft { (x, y) => assertThat(x, is(y)); x }
+
+      bad foreach { w =>
+        val baos2 = new BAOS
+        val inflater = new Inflater(w)
+        try {
+          new InflaterInputStream(new BAIS(deflated), inflater) -> baos2
+          fail("unreachable")
+        }
+        catch {
+          case e:java.io.IOException  =>
+        }
       } 
     }
   } 
 
   @Test
-  def w_zlib = {
-    val deflater = new ZStream
+  def ZStream = {
+    cases foreach { case (iflag, (good, bad)) => 
+      val deflater = new ZStream
 
-    err = deflater.deflateInit(Z_BEST_SPEED, JZlib.DEF_WBITS, 9, JZlib.W_ZLIB)
-    assertThat(err, is(Z_OK))
+      err = deflater.deflateInit(Z_BEST_SPEED, DEF_WBITS, 9, iflag)
+      assertThat(err, is(Z_OK))
 
-    deflate(deflater, data, compr)
+      deflate(deflater, data, compr)
 
-    List(JZlib.W_ZLIB, JZlib.W_ANY) foreach { w =>
-      val inflater = inflate(compr, uncompr, w)
-      val total_out = inflater.total_out.asInstanceOf[Int]
-      assertThat(new String(uncompr, 0, total_out), is(new String(data)))
-    }
+      good foreach { w =>
+        val inflater = inflate(compr, uncompr, w)
+        val total_out = inflater.total_out.asInstanceOf[Int]
+        assertThat(new String(uncompr, 0, total_out), is(new String(data)))
+      }
 
-    List(JZlib.W_GZIP, JZlib.W_NONE) foreach { w =>
-      inflate_fail(compr, uncompr, w)
-    }
-  }
-
-  @Test
-  def w_none = {
-    val deflater = new ZStream
-
-    err = deflater.deflateInit(Z_BEST_SPEED, JZlib.DEF_WBITS, 9, JZlib.W_NONE)
-    assertThat(err, is(Z_OK))
-
-    deflate(deflater, data, compr)
-
-    List(JZlib.W_NONE, JZlib.W_ANY) foreach { w =>
-      val inflater = inflate(compr, uncompr, w)
-      val total_out = inflater.total_out.asInstanceOf[Int]
-      assertThat(new String(uncompr, 0, total_out), is(new String(data)))
-    }
-
-    List(JZlib.W_GZIP, JZlib.W_ZLIB) foreach { w =>
-      inflate_fail(compr, uncompr, w)
-    }
-  }
-
-  @Test
-  def w_gzip = {
-
-    val deflater = new ZStream
-
-    err = deflater.deflateInit(Z_BEST_SPEED, JZlib.DEF_WBITS, 9, JZlib.W_GZIP)
-    assertThat(err, is(Z_OK))
-
-    deflate(deflater, data, compr)
-
-    List(JZlib.W_GZIP, JZlib.W_ANY) foreach { w =>
-      val inflater = inflate(compr, uncompr, w)
-      val total_out = inflater.total_out.asInstanceOf[Int]
-      assertThat(new String(uncompr, 0, total_out), is(new String(data)))
-    }
-
-    List(JZlib.W_ZLIB, JZlib.W_NONE) foreach { w =>
-      inflate_fail(compr, uncompr, w)
+      bad foreach { w =>
+        inflate_fail(compr, uncompr, w)
+      }
     }
   }
 
