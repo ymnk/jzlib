@@ -223,6 +223,12 @@ final class Inflate{
           break;
         }
 
+        if((wrap&2) != 0){
+          this.mode = BAD;
+          z.msg = "incorrect header check";
+          break;
+        }
+
         flags = 0;
 
         this.method = ((int)this.need)&0xff;
