@@ -263,6 +263,8 @@ final class Deflate implements Cloneable {
 
   // number of codes at each bit length for an optimal tree
   short[] bl_count=new short[MAX_BITS+1];
+  // working area to be used in Tree#gen_codes()
+  short[] next_code=new short[MAX_BITS+1];
 
   // heap used to build the Huffman trees
   int[] heap=new int[2*L_CODES+1];
@@ -1706,6 +1708,7 @@ final class Deflate implements Cloneable {
     dest.bl_tree = dup(dest.bl_tree);
 
     dest.bl_count = dup(dest.bl_count);
+    dest.next_code = dup(dest.next_code);
     dest.heap = dup(dest.heap);
     dest.depth = dup(dest.depth);
 
