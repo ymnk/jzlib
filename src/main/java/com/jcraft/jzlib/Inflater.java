@@ -62,13 +62,13 @@ final public class Inflater extends ZStream{
     init();
   }
 
-  public Inflater(JZlib.HeaderType headerType) throws GZIPException {
-    this(DEF_WBITS, headerType);
+  public Inflater(JZlib.WrapperType wrapperType) throws GZIPException {
+    this(DEF_WBITS, wrapperType);
   }
 
-  public Inflater(int w, JZlib.HeaderType headerType) throws GZIPException {
+  public Inflater(int w, JZlib.WrapperType wrapperType) throws GZIPException {
     super();
-    int ret = init(w, headerType);
+    int ret = init(w, wrapperType);
     if(ret!=Z_OK)
       throw new GZIPException(ret+": "+msg);
   }
@@ -94,22 +94,22 @@ final public class Inflater extends ZStream{
     return init(DEF_WBITS);
   }
 
-  public int init(JZlib.HeaderType headerType){
-    return init(DEF_WBITS, headerType);
+  public int init(JZlib.WrapperType wrapperType){
+    return init(DEF_WBITS, wrapperType);
   }
 
-  public int init(int w, JZlib.HeaderType headerType) {
+  public int init(int w, JZlib.WrapperType wrapperType) {
     boolean nowrap = false;
-    if(headerType == JZlib.W_NONE){
+    if(wrapperType == JZlib.W_NONE){
       nowrap = true;
     }
-    else if(headerType == JZlib.W_GZIP) {
+    else if(wrapperType == JZlib.W_GZIP) {
       w += 16;
     }
-    else if(headerType == JZlib.W_ANY) {
+    else if(wrapperType == JZlib.W_ANY) {
       w |= Inflate.INFLATE_ANY;
     }
-    else if(headerType == JZlib.W_ZLIB) {
+    else if(wrapperType == JZlib.W_ZLIB) {
     }
     return init(w, nowrap);
   }

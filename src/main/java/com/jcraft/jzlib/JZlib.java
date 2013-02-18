@@ -41,15 +41,14 @@ final public class JZlib{
   static final public int MAX_WBITS=15;        // 32K LZ77 window
   static final public int DEF_WBITS=MAX_WBITS;
 
-  public enum HeaderType {
+  public enum WrapperType {
     NONE, ZLIB, GZIP, ANY
   }
 
-  public static final HeaderType W_NONE = HeaderType.NONE;
-  public static final HeaderType W_ZLIB = HeaderType.ZLIB;
-  public static final HeaderType W_GZIP = HeaderType.GZIP;
-  public static final HeaderType W_ANY = HeaderType.ANY;
-//  public static final HeaderType W_ZLIB_OR_NONE = W_ANY;
+  public static final WrapperType W_NONE = WrapperType.NONE;
+  public static final WrapperType W_ZLIB = WrapperType.ZLIB;
+  public static final WrapperType W_GZIP = WrapperType.GZIP;
+  public static final WrapperType W_ANY = WrapperType.ANY;
 
   // compression levels
   static final public int Z_NO_COMPRESSION=0;
