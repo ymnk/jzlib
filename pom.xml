@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.jcraft</groupId>
   <artifactId>jzlib</artifactId>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
   <name>JZlib</name>
   <description>JZlib is a re-implementation of zlib in pure Java</description>
   <url>http://www.jcraft.com/jzlib/</url>
