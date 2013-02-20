@@ -156,6 +156,10 @@ final class Inflate{
       if(w < 48)
         w &= 15;
     }
+    else if((w & ~31) != 0) { // for example, DEF_WBITS + 32
+      wrap = 4;               // zlib and gzip wrapped data should be accepted.
+      w &= 15;
+    }
     else {
       wrap = (w >> 4) + 1;
       if(w < 48)

@@ -93,6 +93,60 @@ class WrapperTypeTest {
     }
   }
 
+  @Test
+  def wbits_plus_32 = {
+
+    var deflater = new Deflater
+    err = deflater.init(Z_BEST_SPEED, DEF_WBITS, 9)
+    assertThat(err, is(Z_OK))
+
+    deflate(deflater, data, compr)
+
+    var inflater = new Inflater
+    err = inflater.init(DEF_WBITS + 32)
+    assertThat(err, is(Z_OK))
+
+    inflater.setInput(compr)
+
+    var loop = true
+    while(loop) {
+      inflater.setOutput(uncompr)
+      err = inflater.inflate(Z_NO_FLUSH)
+      if(err == Z_STREAM_END) loop = false
+      else assertThat(err, is(Z_OK))
+    }
+    err = inflater.end
+    assertThat(err, is(Z_OK))
+
+    var total_out = inflater.total_out.asInstanceOf[Int]
+    assertThat(new String(uncompr, 0, total_out), is(new String(data)))
+
+    deflater = new Deflater
+    err = deflater.init(Z_BEST_SPEED, DEF_WBITS + 16, 9)
+    assertThat(err, is(Z_OK))
+
+    deflate(deflater, data, compr)
+
+    inflater = new Inflater
+    err = inflater.init(DEF_WBITS + 32)
+    assertThat(err, is(Z_OK))
+
+    inflater.setInput(compr)
+
+    loop = true
+    while(loop) {
+      inflater.setOutput(uncompr)
+      err = inflater.inflate(Z_NO_FLUSH)
+      if(err == Z_STREAM_END) loop = false
+      else assertThat(err, is(Z_OK))
+    }
+    err = inflater.end
+    assertThat(err, is(Z_OK))
+
+    total_out = inflater.total_out.asInstanceOf[Int]
+    assertThat(new String(uncompr, 0, total_out), is(new String(data)))
+  }
+
   private def deflate(deflater: ZStream,
                       data: Array[Byte], compr: Array[Byte]) = {
     deflater.setInput(data)
