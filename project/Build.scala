@@ -5,7 +5,7 @@ object BuildSettings {
   val buildName = "jzlib"
   val buildOrganization = "JCraft,Inc."
   val buildVersion = "1.1.2"
-  val buildScalaVersion = "2.9.1"
+  val buildScalaVersion = "2.10.1"
 
   val buildSettings = Defaults.defaultSettings ++ Seq (
     organization := buildOrganization,
