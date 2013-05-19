@@ -1,4 +1,4 @@
-/* -*-mode:java; c-basic-offset:2; indent-tabs-mode:nil -*- */
+/* -*-mode:scala; c-basic-offset:2; indent-tabs-mode:nil -*- */
 package com.jcraft
 
 import java.io._

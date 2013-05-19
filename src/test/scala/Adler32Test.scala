@@ -1,24 +1,24 @@
-/* -*-mode:java; c-basic-offset:2; indent-tabs-mode:nil -*- */
+/* -*-mode:scala; c-basic-offset:2; indent-tabs-mode:nil -*- */
 package com.jcraft.jzlib
 
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-import org.junit.{Test, Before}
-import org.junit.Assert._
-import org.hamcrest.CoreMatchers._
+import org.scalatest._
+import org.scalatest.matchers.ShouldMatchers
+
 import java.util.zip.{Adler32 => juzAdler32}
 
-@RunWith(classOf[JUnit4])
-class Adler32Test {
+class Adler32Test extends FlatSpec with BeforeAndAfter with ShouldMatchers {
   private var adler: Adler32 = _
 
-  @Before
-  def setUp = {
+  before {
     adler = new Adler32
   }
 
-  @Test
-  def comat = {
+  after {
+  }
+
+  behavior of "Adler32"
+
+  it must "be compatible with java.util.zip.Adler32." in {
     val buf1 = randombuf(1024)
     val juza = new juzAdler32
     val expected = {
@@ -27,11 +27,10 @@ class Adler32Test {
     }
     val actual = getValue(List(buf1));
 
-    assertThat(actual, is(expected)) 
+    actual should equal (expected)
   }
 
-  @Test
-  def copy = {
+  it can "copy itself." in {
     val buf1 = randombuf(1024)
     val buf2 = randombuf(1024)
 
@@ -47,11 +46,10 @@ class Adler32Test {
     val expected = adler1.getValue
     val actual = adler2.getValue
 
-    assertThat(actual, is(expected)) 
+    actual should equal (expected)
   }
 
-  @Test
-  def combine = {
+  it can "combine adler values." in {
 
     val buf1 = randombuf(1024)
     val buf2 = randombuf(1024)
@@ -62,7 +60,7 @@ class Adler32Test {
 
     val actual = Adler32.combine(adler1, adler2, buf2.length)
 
-    assertThat(actual, is(expected)) 
+    actual should equal (expected)
   }
 
   private def getValue(buf:Seq[Array[Byte]]) = synchronized {

@@ -1,25 +1,24 @@
-/* -*-mode:java; c-basic-offset:2; indent-tabs-mode:nil -*- */
+/* -*-mode:scala; c-basic-offset:2; indent-tabs-mode:nil -*- */
 package com.jcraft.jzlib
 
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-import org.junit.{Test, Before}
-import org.junit.Assert._
-import org.hamcrest.CoreMatchers._
+import org.scalatest._
+import org.scalatest.matchers.ShouldMatchers
 
 import java.io._
 
 import JZlib._
 
-@RunWith(classOf[JUnit4])
-class GZIPIOStreamTest {
+class GZIPIOStreamTest extends FlatSpec with BeforeAndAfter with ShouldMatchers {
 
-  @Before
-  def setUp = {
+  before {
   }
 
-  @Test
-  def outstream = {
+  after {
+  }
+
+  behavior of "GZipOutputStream and GZipInputStream"
+
+  it can "deflate and infate data." in {
 
     val comment = "hi"
     val name = "/tmp/foo"
@@ -41,17 +40,17 @@ class GZIPIOStreamTest {
     val buf = new Array[Byte](1024)
     val i = gis.read(buf)
 
-    assertThat(content.length, is(i))
+    content.length should equal(i)
     (0 until i) foreach { i =>
-      assertThat(content(i).asInstanceOf[Byte], is(buf(i).asInstanceOf[Byte]))
+      content(i).asInstanceOf[Byte] should equal(buf(i).asInstanceOf[Byte])
     }
 
-    assertThat(comment, is(gis.getComment))
-    assertThat(name, is(gis.getName))
+    comment should equal(gis.getComment)
+    name should equal(gis.getName)
 
     val crc32 = new CRC32
     crc32.update(content, 0, content.length)
 
-    assertThat(crc32.getValue, is(gis.getCRC.asInstanceOf[Long]))
+    crc32.getValue should equal(gis.getCRC.asInstanceOf[Long])
   }
 }

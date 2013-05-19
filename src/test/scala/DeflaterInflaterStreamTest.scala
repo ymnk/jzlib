@@ -1,25 +1,24 @@
-/* -*-mode:java; c-basic-offset:2; indent-tabs-mode:nil -*- */
+/* -*-mode:scala; c-basic-offset:2; indent-tabs-mode:nil -*- */
 package com.jcraft.jzlib
 
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-import org.junit.{Test, Before}
-import org.junit.Assert._
-import org.hamcrest.CoreMatchers._
+import org.scalatest._
+import org.scalatest.matchers.ShouldMatchers
 
 import java.io.{ByteArrayOutputStream => BAOS, ByteArrayInputStream => BAIS}
 
 import JZlib._
 
-@RunWith(classOf[JUnit4])
-class DeflaterInflaterStreamTest {
+class DeflaterInflaterStreamTest extends FlatSpec with BeforeAndAfter with ShouldMatchers {
 
-  @Before
-  def setUp = {
+  before {
   }
 
-  @Test
-  def one_by_one = {
+  after {
+  }
+
+  behavior of "Deflter and Inflater"
+
+  it can "deflate and infate data one by one." in {
     val data1 = randombuf(1024)
     implicit val buf = new Array[Byte](1)
 
@@ -32,12 +31,13 @@ class DeflaterInflaterStreamTest {
     new InflaterInputStream(new BAIS(baos.toByteArray)) -> baos2
     val data2 = baos2.toByteArray 
 
-    assertThat(data2.length, is(data1.length))
-    assertThat(data2, is(data1))
+    data2.length should equal (data1.length)
+    data2 should equal (data1)
   }
 
-  @Test
-  def read_write_with_buf = {
+  behavior of "DeflterOutputStream and InflaterInputStream"
+
+  it can "deflate and infate." in {
 
     (1 to 100 by 3).foreach { i =>
 
@@ -54,13 +54,14 @@ class DeflaterInflaterStreamTest {
       new InflaterInputStream(new BAIS(baos.toByteArray)) -> baos2
       val data2 = baos2.toByteArray
 
-      assertThat(data2.length, is(data1.length))
-      assertThat(data2, is(data1))
+      data2.length should equal (data1.length)
+      data2 should equal (data1)
     }
   }
 
-  @Test
-  def read_write_with_buf_nowrap = {
+  behavior of "Deflter and Inflater"
+
+  it can "deflate and infate nowrap data." in {
 
     (1 to 100 by 3).foreach { i =>
 
@@ -81,13 +82,12 @@ class DeflaterInflaterStreamTest {
       new InflaterInputStream(new BAIS(baos.toByteArray), inflater) -> baos2
       val data2 = baos2.toByteArray
 
-      assertThat(data2.length, is(data1.length))
-      assertThat(data2, is(data1))
+      data2.length should equal (data1.length)
+      data2 should equal (data1)
     }
   }
 
-  @Test
-  def read_write_with_nowrap = {
+  it can "deflate and infate nowrap data with MAX_WBITS." in {
     implicit val buf = new Array[Byte](100)
 
     List(randombuf(10240),
@@ -108,8 +108,8 @@ class DeflaterInflaterStreamTest {
       new InflaterInputStream(new BAIS(baos.toByteArray), inflater) -> baos2
       val data2 = baos2.toByteArray
 
-      assertThat(data2.length, is(data1.length))
-      assertThat(data2, is(data1))
+      data2.length should equal (data1.length)
+      data2 should equal (data1)
     }
   }
 }

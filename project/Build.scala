@@ -22,12 +22,10 @@ object MyBuild extends Build {
 
   import BuildSettings._
 
-  val scalatest = "org.scalatest" %% "scalatest" % "1.6.1"
-  val junit = "junit" % "junit" % "4.8"
-  val junit_interface = "com.novocode" % "junit-interface" % "0.7"
+  val scalatest = "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test"
 
   private val dependencies = Seq (
-    scalatest, junit, junit_interface
+    scalatest
   )
 
   private val test_argument = 
