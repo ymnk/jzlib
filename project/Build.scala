@@ -28,12 +28,8 @@ object MyBuild extends Build {
     scalatest
   )
 
-  private val test_argument = 
-    Tests.Argument( TestFrameworks.JUnit, "-q", "-v" )
-
   lazy val root =
     Project( buildName, file("."), settings = buildSettings )
       .settings( libraryDependencies ++= dependencies )
-      .settings( testOptions in Test += test_argument )
       .settings( parallelExecution in Test := false )
 }
