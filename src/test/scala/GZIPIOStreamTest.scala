@@ -5,6 +5,10 @@ import org.scalatest._
 import org.scalatest.matchers.ShouldMatchers
 
 import java.io._
+import java.util.zip.CheckedOutputStream
+import java.util.zip.CheckedInputStream
+import java.util.zip.{GZIPInputStream => juzGZIPInputStream}
+import java.util.zip.{CRC32 => juzCRC32}
 
 import JZlib._
 
@@ -16,7 +20,7 @@ class GZIPIOStreamTest extends FlatSpec with BeforeAndAfter with ShouldMatchers 
   after {
   }
 
-  behavior of "GZipOutputStream and GZipInputStream"
+  behavior of "GZIPOutputStream and GZIPInputStream"
 
   it can "deflate and infate data." in {
 
@@ -52,5 +56,35 @@ class GZIPIOStreamTest extends FlatSpec with BeforeAndAfter with ShouldMatchers 
     crc32.update(content, 0, content.length)
 
     crc32.getValue should equal(gis.getCRC.asInstanceOf[Long])
+  }
+
+  behavior of "GZIPOutputStream"
+
+  // https://github.com/ymnk/jzlib/issues/9
+  // https://github.com/jglick/jzlib-9-demo
+  it can "deflate some file without AIOOBE." in {
+    val pos = new PipedOutputStream()
+    val pis = new PipedInputStream(pos)
+    val csOut = new juzCRC32()
+    val gos = new GZIPOutputStream(pos)
+    val cos = new CheckedOutputStream(gos, csOut)
+
+    val t = new Thread() {
+      override def run = {
+        val fail = "/jzlib.fail.gz".fromResource
+        val fis = new juzGZIPInputStream(new ByteArrayInputStream(fail))
+        fis -> cos
+        cos.close()
+      }
+    }
+    t.start();
+
+    val gis = new GZIPInputStream(pis)
+    val csIn = new juzCRC32();
+    new CheckedInputStream(gis, csIn) -> new ByteArrayOutputStream()
+
+    t.join()
+
+    csIn.getValue() should equal(csOut.getValue)
   }
 }
