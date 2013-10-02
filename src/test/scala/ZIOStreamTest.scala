@@ -1,11 +1,8 @@
-/* -*-mode:java; c-basic-offset:2; indent-tabs-mode:nil -*- */
+/* -*-mode:scala; c-basic-offset:2; indent-tabs-mode:nil -*- */
 package com.jcraft.jzlib
 
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-import org.junit.{Test, Before}
-import org.junit.Assert._
-import org.hamcrest.CoreMatchers._
+import org.scalatest._
+import org.scalatest.matchers.ShouldMatchers
 
 import java.io.{ByteArrayOutputStream => BAOS, ByteArrayInputStream => BAIS}
 import java.io.{ObjectOutputStream => OOS, ObjectInputStream => OIS}
@@ -13,15 +10,17 @@ import java.io._
 
 import JZlib._
 
-@RunWith(classOf[JUnit4])
-class ZIOStreamTest {
+class ZIOStreamTest extends FlatSpec with BeforeAndAfter with ShouldMatchers {
 
-  @Before
-  def setUp = {
+  before {
   }
 
-  @Test
-  def deflate_inflate = {
+  after {
+  }
+
+  behavior of "ZOutputStream and ZInputStream"
+
+  it can "deflate and inflate data." in {
     val hello = "Hello World!"
 
     val out = new BAOS()
@@ -34,11 +33,12 @@ class ZIOStreamTest {
     val zIn = new ZInputStream(in)
     val objIn = new OIS(zIn)
 
-    assertThat(objIn.readObject.toString, is(hello))
+    objIn.readObject.toString should equal (hello)
   }
 
-  @Test
-  def nowrap = {
+  behavior of "ZOutputStream and ZInputStream"
+
+  it can "support nowrap data." in {
 
     implicit val buf = new Array[Byte](100)
 
@@ -54,7 +54,7 @@ class ZIOStreamTest {
     zis -> baos2
     val data2 = baos2.toByteArray
 
-    assertThat(data2.length, is(hello.length))
-    assertThat(data2, is(hello))
+    data2.length should equal (hello.length)
+    data2 should equal (hello)
   }
 }

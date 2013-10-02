@@ -1,17 +1,14 @@
-/* -*-mode:java; c-basic-offset:2; indent-tabs-mode:nil -*- */
+/* -*-mode:scala; c-basic-offset:2; indent-tabs-mode:nil -*- */
 package com.jcraft.jzlib
 
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-import org.junit.{Test, Before}
-import org.junit.Assert._
-import org.hamcrest.CoreMatchers._
+import org.scalatest._
+import org.scalatest.matchers.ShouldMatchers
+
 import java.io.{ByteArrayOutputStream => BAOS, ByteArrayInputStream => BAIS}
 
 import JZlib._
 
-@RunWith(classOf[JUnit4])
-class WrapperTypeTest {
+class WrapperTypeTest extends FlatSpec with BeforeAndAfter with ShouldMatchers {
   val data = "hello, hello!".getBytes
 
   val comprLen = 40000
@@ -25,16 +22,19 @@ class WrapperTypeTest {
          (W_GZIP, (List(W_GZIP, W_ANY), List(W_ZLIB, W_NONE))),
          (W_NONE, (List(W_NONE, W_ANY), List(W_ZLIB, W_GZIP))))
 
-  @Before
-  def setUp = {
+  before {
     compr = new Array[Byte](comprLen)
     uncompr = new Array[Byte](uncomprLen)
 
     err = Z_OK
   }
 
-  @Test
-  def DeflterInflaterStream = {
+  after {
+  }
+
+  behavior of "Deflater"
+
+  it can "detect data type of input." in {
     implicit val buf = compr
 
     cases foreach { case (iflag, (good, bad)) => 
@@ -51,11 +51,11 @@ class WrapperTypeTest {
         val inflater = new Inflater(w)
         new InflaterInputStream(new BAIS(deflated), inflater) -> baos2
         val data1 = baos2.toByteArray
-        assertThat(data1.length, is(data.length))
-        assertThat(data1, is(data))
+        data1.length should equal (data.length)
+        data1 should equal (data)
         import inflater._
         (avail_in, avail_out, total_in, total_out)
-      } reduceLeft { (x, y) => assertThat(x, is(y)); x }
+      } reduceLeft { (x, y) => x should equal (y); x }
 
       bad foreach { w =>
         val baos2 = new BAOS
@@ -71,20 +71,21 @@ class WrapperTypeTest {
     }
   } 
 
-  @Test
-  def ZStream = {
+  behavior of "ZStream"
+
+  it can "detect data type of input." in {
     cases foreach { case (iflag, (good, bad)) => 
       val deflater = new ZStream
 
       err = deflater.deflateInit(Z_BEST_SPEED, DEF_WBITS, 9, iflag)
-      assertThat(err, is(Z_OK))
+      err should equal (Z_OK)
 
       deflate(deflater, data, compr)
 
       good foreach { w =>
         val inflater = inflate(compr, uncompr, w)
         val total_out = inflater.total_out.asInstanceOf[Int]
-        assertThat(new String(uncompr, 0, total_out), is(new String(data)))
+        new String(uncompr, 0, total_out) should equal (new String(data))
       }
 
       bad foreach { w =>
@@ -93,18 +94,19 @@ class WrapperTypeTest {
     }
   }
 
-  @Test
-  def wbits_plus_32 = {
+  behavior of "Deflater"
+
+  it should "support wbits+32." in {
 
     var deflater = new Deflater
     err = deflater.init(Z_BEST_SPEED, DEF_WBITS, 9)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     deflate(deflater, data, compr)
 
     var inflater = new Inflater
     err = inflater.init(DEF_WBITS + 32)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater.setInput(compr)
 
@@ -113,23 +115,23 @@ class WrapperTypeTest {
       inflater.setOutput(uncompr)
       err = inflater.inflate(Z_NO_FLUSH)
       if(err == Z_STREAM_END) loop = false
-      else assertThat(err, is(Z_OK))
+      else err should equal (Z_OK)
     }
     err = inflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     var total_out = inflater.total_out.asInstanceOf[Int]
-    assertThat(new String(uncompr, 0, total_out), is(new String(data)))
+    new String(uncompr, 0, total_out) should equal (new String(data))
 
     deflater = new Deflater
     err = deflater.init(Z_BEST_SPEED, DEF_WBITS + 16, 9)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     deflate(deflater, data, compr)
 
     inflater = new Inflater
     err = inflater.init(DEF_WBITS + 32)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater.setInput(compr)
 
@@ -138,13 +140,13 @@ class WrapperTypeTest {
       inflater.setOutput(uncompr)
       err = inflater.inflate(Z_NO_FLUSH)
       if(err == Z_STREAM_END) loop = false
-      else assertThat(err, is(Z_OK))
+      else err should equal (Z_OK)
     }
     err = inflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     total_out = inflater.total_out.asInstanceOf[Int]
-    assertThat(new String(uncompr, 0, total_out), is(new String(data)))
+    new String(uncompr, 0, total_out) should equal (new String(data))
   }
 
   private def deflate(deflater: ZStream,
@@ -153,10 +155,10 @@ class WrapperTypeTest {
     deflater.setOutput(compr)
 
     err = deflater.deflate(JZlib.Z_FINISH)
-    assertThat(err, is(Z_STREAM_END))
+    err should equal (Z_STREAM_END)
 
     err = deflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
   }    
 
   private def inflate(compr: Array[Byte],
@@ -164,7 +166,7 @@ class WrapperTypeTest {
                       w: WrapperType) = {
     val inflater = new ZStream
     err = inflater.inflateInit(w)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater.setInput(compr)
 
@@ -173,10 +175,10 @@ class WrapperTypeTest {
       inflater.setOutput(uncompr)
       err = inflater.inflate(Z_NO_FLUSH)
       if(err == Z_STREAM_END) loop = false
-      else assertThat(err, is(Z_OK))
+      else err should equal (Z_OK)
     }
     err = inflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater
   }
@@ -187,7 +189,7 @@ class WrapperTypeTest {
     val inflater = new ZStream
 
     err = inflater.inflateInit(w)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater.setInput(compr)
 
@@ -197,7 +199,7 @@ class WrapperTypeTest {
       err = inflater.inflate(Z_NO_FLUSH)
       if(err == Z_STREAM_END) loop = false
       else {
-        assertThat(err, is(Z_DATA_ERROR))
+        err should equal (Z_DATA_ERROR)
         loop = false
       }
     }

@@ -1,16 +1,12 @@
-/* -*-mode:java; c-basic-offset:2; indent-tabs-mode:nil -*- */
+/* -*-mode:scala; c-basic-offset:2; indent-tabs-mode:nil -*- */
 package com.jcraft.jzlib
 
-import org.junit.runner.RunWith
-import org.junit.runners.JUnit4
-import org.junit.{Test, Before}
-import org.junit.Assert._
-import org.hamcrest.CoreMatchers._
+import org.scalatest._
+import org.scalatest.matchers.ShouldMatchers
 
 import JZlib._
 
-@RunWith(classOf[JUnit4])
-class DeflateInflateTest {
+class DeflateInflateTest extends FlatSpec with BeforeAndAfter with ShouldMatchers {
   val comprLen = 40000
   val uncomprLen = comprLen
   var compr:Array[Byte] = _
@@ -19,8 +15,8 @@ class DeflateInflateTest {
   var deflater: Deflater = _
   var inflater: Inflater = _
   var err: Int = _
-  @Before
-  def setUp = {
+
+  before {
     compr = new Array[Byte](comprLen)
     uncompr = new Array[Byte](uncomprLen)
 
@@ -30,68 +26,71 @@ class DeflateInflateTest {
     err = Z_OK
   }
 
-  @Test
-  def large = {
+  after {
+  }
+
+  behavior of "Deflter and Inflater"
+
+  it can "deflate and infate data in the large buffer." in {
     val data = "hello, hello!".getBytes
 
     err = deflater.init(Z_BEST_SPEED)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     deflater.setInput(uncompr)
     deflater.setOutput(compr)
 
     err = deflater.deflate(Z_NO_FLUSH)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
-    assertThat(deflater.avail_in, is(0))
+    deflater.avail_in should equal (0)
 
     deflater.params(Z_NO_COMPRESSION, Z_DEFAULT_STRATEGY)
     deflater.setInput(compr)
     deflater.avail_in = comprLen/2 
 
     err = deflater.deflate(Z_NO_FLUSH)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     deflater.params(Z_BEST_COMPRESSION, Z_FILTERED)
     deflater.setInput(uncompr)
     deflater.avail_in = uncomprLen
 
     err = deflater.deflate(Z_NO_FLUSH)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     err = deflater.deflate(JZlib.Z_FINISH);
-    assertThat(err, is(Z_STREAM_END))
+    err should equal (Z_STREAM_END)
 
     err = deflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater.setInput(compr)
 
     err = inflater.init
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     var loop = true
     while(loop) {
       inflater.setOutput(uncompr)
       err = inflater.inflate(Z_NO_FLUSH)
       if(err == Z_STREAM_END) loop = false
-      else assertThat(err, is(Z_OK))
+      else err should equal (Z_OK)
     }
 
     err = inflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     val total_out = inflater.total_out.asInstanceOf[Int]
 
-    assertThat(total_out, is(2*uncomprLen + comprLen/2))
+    total_out should equal (2*uncomprLen + comprLen/2)
   }
 
-  @Test
-  def small_buffers = {
+  it can "deflate and infate data in the small buffer." in {
     val data = "hello, hello!".getBytes
 
     err = deflater.init(Z_DEFAULT_COMPRESSION)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     deflater.setInput(data)
     deflater.setOutput(compr)
@@ -101,7 +100,7 @@ class DeflateInflateTest {
       deflater.avail_in = 1
       deflater.avail_out = 1
       err = deflater.deflate(Z_NO_FLUSH)
-      assertThat(err, is(Z_OK))
+      err should equal (Z_OK)
     }
 
     do {
@@ -111,13 +110,13 @@ class DeflateInflateTest {
     while(err != Z_STREAM_END);
 
     err = deflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater.setInput(compr)
     inflater.setOutput(uncompr)
 
     err = inflater.init
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     var loop = true
     while(inflater.total_out<uncomprLen &&
@@ -127,29 +126,28 @@ class DeflateInflateTest {
       inflater.avail_out = 1; // force small buffers
       err = inflater.inflate(Z_NO_FLUSH)
       if(err == Z_STREAM_END) loop = false
-      else assertThat(err, is(Z_OK))
+      else err should equal (Z_OK)
     }
 
     err = inflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     val total_out = inflater.total_out.asInstanceOf[Int]
     val actual = new Array[Byte](total_out)
     System.arraycopy(uncompr, 0, actual, 0, total_out)
 
-    assertThat(actual, is(data)) 
+    actual should equal (data)
   }
 
-  @Test
-  def dictionary = {
+  it should "support the dictionary." in {
     val hello = "hello".getBytes
     val dictionary = "hello, hello!".getBytes
 
     err = deflater.init(Z_DEFAULT_COMPRESSION)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     deflater.setDictionary(dictionary, dictionary.length)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     val dictID = deflater.getAdler
 
@@ -157,13 +155,13 @@ class DeflateInflateTest {
     deflater.setOutput(compr)
 
     err = deflater.deflate(Z_FINISH)
-    assertThat(err, is(Z_STREAM_END))
+    err should equal (Z_STREAM_END)
 
     err = deflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     err = inflater.init
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater.setInput(compr)
     inflater.setOutput(uncompr)
@@ -175,51 +173,50 @@ class DeflateInflateTest {
         case Z_STREAM_END =>
           loop = false
         case Z_NEED_DICT =>
-          assertThat(dictID, is(inflater.getAdler))
+          dictID should equal (inflater.getAdler)
           err = inflater.setDictionary(dictionary, dictionary.length);
-          assertThat(err, is(Z_OK))
+          err should equal (Z_OK)
         case _ =>
-          assertThat(err, is(Z_OK))
+          err should equal (Z_OK)
       }
     }
     while(loop)
 
     err = inflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     val total_out = inflater.total_out.asInstanceOf[Int]
     val actual = new Array[Byte](total_out)
     System.arraycopy(uncompr, 0, actual, 0, total_out)
 
-    assertThat(actual, is(hello)) 
+    actual should equal (hello)
   }
 
-  @Test
-  def sync = {
+  it should "support the sync." in {
     val hello = "hello".getBytes
 
     err = deflater.init(Z_DEFAULT_COMPRESSION)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     deflater.setInput(hello)
     deflater.avail_in = 3;
     deflater.setOutput(compr)
 
     err = deflater.deflate(Z_FULL_FLUSH)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     compr(3) = (compr(3) + 1).asInstanceOf[Byte]
     deflater.avail_in = hello.length - 3;
 
     err = deflater.deflate(Z_FINISH)
-    assertThat(err, is(Z_STREAM_END))
+    err should equal (Z_STREAM_END)
     val comprLen= deflater.total_out.asInstanceOf[Int]
 
     err = deflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     err = inflater.init
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater.setInput(compr)
     inflater.avail_in = 2
@@ -227,26 +224,27 @@ class DeflateInflateTest {
     inflater.setOutput(uncompr)
 
     err = inflater.inflate(JZlib.Z_NO_FLUSH)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater.avail_in = comprLen-2
     err = inflater.sync
 
     err = inflater.inflate(Z_FINISH)
-    assertThat(err, is(Z_DATA_ERROR))
+    err should equal (Z_DATA_ERROR)
 
     err = inflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     val total_out = inflater.total_out.asInstanceOf[Int]
     val actual = new Array[Byte](total_out)
     System.arraycopy(uncompr, 0, actual, 0, total_out)
 
-    assertThat("hel"+new String(actual), is(new String(hello))) 
+    "hel"+new String(actual) should equal (new String(hello))
   }
 
-  @Test
-  def gzip_inflater = {
+  behavior of "Inflater"
+
+  it can "inflate gzip data." in {
     val hello = "foo".getBytes
     val data = List(0x1f, 0x8b, 0x08, 0x18, 0x08, 0xeb, 0x7a, 0x0b, 0x00, 0x0b,
                     0x58, 0x00, 0x59, 0x00, 0x4b, 0xcb, 0xcf, 0x07, 0x00, 0x21,
@@ -255,7 +253,7 @@ class DeflateInflateTest {
                     toArray
 
     err = inflater.init(15 + 32)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater.setInput(data)
     inflater.setOutput(uncompr)
@@ -268,25 +266,26 @@ class DeflateInflateTest {
           loop) {
       err = inflater.inflate(Z_NO_FLUSH)
       if(err == Z_STREAM_END) loop = false
-      else assertThat(err, is(Z_OK))
+      else err should equal (Z_OK)
     }
 
     err = inflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     val total_out = inflater.total_out.asInstanceOf[Int]
     val actual = new Array[Byte](total_out)
     System.arraycopy(uncompr, 0, actual, 0, total_out)
 
-    assertThat(actual, is(hello)) 
+    actual should equal (hello)
   }
 
-  @Test
-  def gzip_deflate_inflate = {
+  behavior of "Inflater and Deflater"
+
+  it can "support gzip data." in {
     val data = "hello, hello!".getBytes
 
     err = deflater.init(Z_DEFAULT_COMPRESSION, 15+16)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     deflater.setInput(data)
     deflater.setOutput(compr)
@@ -296,7 +295,7 @@ class DeflateInflateTest {
       deflater.avail_in = 1
       deflater.avail_out = 1
       err = deflater.deflate(Z_NO_FLUSH)
-      assertThat(err, is(Z_OK))
+      err should equal (Z_OK)
     }
 
     do {
@@ -306,13 +305,13 @@ class DeflateInflateTest {
     while(err != Z_STREAM_END);
 
     err = deflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     inflater.setInput(compr)
     inflater.setOutput(uncompr)
 
     err = inflater.init(15 + 32)
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     var loop = true
     while(inflater.total_out<uncomprLen &&
@@ -322,16 +321,16 @@ class DeflateInflateTest {
       inflater.avail_out = 1; // force small buffers
       err = inflater.inflate(Z_NO_FLUSH)
       if(err == Z_STREAM_END) loop = false
-      else assertThat(err, is(Z_OK))
+      else err should equal (Z_OK)
     }
 
     err = inflater.end
-    assertThat(err, is(Z_OK))
+    err should equal (Z_OK)
 
     val total_out = inflater.total_out.asInstanceOf[Int]
     val actual = new Array[Byte](total_out)
     System.arraycopy(uncompr, 0, actual, 0, total_out)
 
-    assertThat(actual, is(data)) 
+    actual should equal (data) 
   }
 }

@@ -1,15 +1,27 @@
-/* -*-mode:java; c-basic-offset:2; indent-tabs-mode:nil -*- */
+/* -*-mode:scala; c-basic-offset:2; indent-tabs-mode:nil -*- */
 package com.jcraft
 
 import java.io._
 
 package object jzlib {
   implicit def readIS(is: InputStream) = new {
-      def ->(out: OutputStream)(implicit buf: Array[Byte]) = {
-      Stream.continually(is.read(buf)).
-                         takeWhile(-1 !=).foreach(i => out.write(buf, 0, i))
+      def ->(out: OutputStream)
+            (implicit buf: Array[Byte] = new Array[Byte](1024)) = {
+      Stream.
+        continually(is.read(buf)).
+        takeWhile(-1 !=).
+        foreach(i => out.write(buf, 0, i))
       is.close
     }
+  }
+
+  // reading a resource file 
+  implicit def fromResource(str: String ) = new {
+    def fromResource: Array[Byte] =
+      io.Source.
+         fromURL(getClass.getResource(str))(io.Codec.ISO8859).
+         map(_.toByte).
+         toArray
   }
 
   implicit def readArray(is: Array[Byte]) = new {

@@ -4,8 +4,8 @@ import Keys._
 object BuildSettings {
   val buildName = "jzlib"
   val buildOrganization = "JCraft,Inc."
-  val buildVersion = "1.1.2"
-  val buildScalaVersion = "2.9.1"
+  val buildVersion = "1.1.3"
+  val buildScalaVersion = "2.10.1"
 
   val buildSettings = Defaults.defaultSettings ++ Seq (
     organization := buildOrganization,
@@ -22,20 +22,14 @@ object MyBuild extends Build {
 
   import BuildSettings._
 
-  val scalatest = "org.scalatest" %% "scalatest" % "1.6.1"
-  val junit = "junit" % "junit" % "4.8"
-  val junit_interface = "com.novocode" % "junit-interface" % "0.7"
+  val scalatest = "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test"
 
   private val dependencies = Seq (
-    scalatest, junit, junit_interface
+    scalatest
   )
-
-  private val test_argument = 
-    Tests.Argument( TestFrameworks.JUnit, "-q", "-v" )
 
   lazy val root =
     Project( buildName, file("."), settings = buildSettings )
       .settings( libraryDependencies ++= dependencies )
-      .settings( testOptions in Test += test_argument )
       .settings( parallelExecution in Test := false )
 }
