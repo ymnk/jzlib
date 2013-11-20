@@ -137,7 +137,7 @@ public class DeflaterOutputStream extends FilterOutputStream {
           break;
         }
       default:
-        throw new IOException("failed to deflate");
+        throw new IOException("failed to deflate: error="+err+" avail_out="+deflater.avail_out);
     }
     int len = deflater.next_out_index;
     if (len > 0) {
