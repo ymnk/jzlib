@@ -59,7 +59,6 @@ public class GZIPHeader implements Cloneable {
 
   boolean text = false;
   private boolean fhcrc = false;
-  long time;
   int xflags;
   int os = 255;
   byte[] extra;
