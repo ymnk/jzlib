@@ -26,6 +26,7 @@ class GZIPIOStreamTest extends FlatSpec with BeforeAndAfter with ShouldMatchers 
 
     val comment = "hi"
     val name = "/tmp/foo"
+    val time = System.currentTimeMillis() / 1000
 
     val content = "hello".getBytes
 
@@ -34,6 +35,7 @@ class GZIPIOStreamTest extends FlatSpec with BeforeAndAfter with ShouldMatchers 
 
     gos.setComment(comment)
     gos.setName(name)
+    gos.setModifiedTime(time)
  
     gos.write(content)
     gos.close
@@ -51,6 +53,7 @@ class GZIPIOStreamTest extends FlatSpec with BeforeAndAfter with ShouldMatchers 
 
     comment should equal(gis.getComment)
     name should equal(gis.getName)
+    time should equal(gis.getModifiedTime)
 
     val crc32 = new CRC32
     crc32.update(content, 0, content.length)

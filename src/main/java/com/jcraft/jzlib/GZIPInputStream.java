@@ -69,7 +69,17 @@ public class GZIPInputStream extends InflaterInputStream {
     return i;
   }
 
+  /**
+   * @deprecated use getModifiedTime()
+   */
   public long getModifiedtime() {
+    return this.getModifiedTime();
+  }
+
+  /**
+   * @return the modified time.
+   */
+  public long getModifiedTime() {
     return inflater.istate.getGZIPHeader().getModifiedTime();
   }
 
