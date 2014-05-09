@@ -371,6 +371,8 @@ public class ZStream{
   /**
    * Those methods are expected to be override by Inflater and Deflater.
    * In the future, they will become abstract methods.
+   *
+   * @return an error code
    */ 
   public int end(){ return Z_OK; }
   public boolean finished(){ return false; }
