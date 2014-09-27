@@ -71,6 +71,7 @@ public class GZIPInputStream extends InflaterInputStream {
 
   /**
    * @deprecated use getModifiedTime()
+   * @return long modified time.
    */
   public long getModifiedtime() {
     return this.getModifiedTime();

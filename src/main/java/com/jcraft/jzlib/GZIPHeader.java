@@ -37,7 +37,7 @@ package com.jcraft.jzlib;
 import java.io.UnsupportedEncodingException;
 
 /**
- * @see "http://www.ietf.org/rfc/rfc1952.txt"
+ * @see <a href="http://www.ietf.org/rfc/rfc1952.txt">http://www.ietf.org/rfc/rfc1952.txt</a>
  */
 public class GZIPHeader implements Cloneable {
 
