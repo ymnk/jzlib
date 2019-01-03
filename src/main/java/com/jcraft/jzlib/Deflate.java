@@ -1356,7 +1356,7 @@ final class Deflate implements Cloneable {
 
     if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || 
 	method != Z_DEFLATED ||
-	windowBits < 9 || windowBits > 15 || level < 0 || level > 9 ||
+	windowBits < 8 || windowBits > 15 || level < 0 || level > 9 ||
         strategy < 0 || strategy > Z_HUFFMAN_ONLY) {
       return Z_STREAM_ERROR;
     }

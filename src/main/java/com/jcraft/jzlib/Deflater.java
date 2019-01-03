@@ -106,7 +106,7 @@ final public class Deflater extends ZStream{
     return init(level, bits, false);
   }
   public int init(int level, int bits, int memlevel, JZlib.WrapperType wrapperType){
-    if(bits < 9 || bits > 15){
+    if(bits < 8 || bits > 15){
       return Z_STREAM_ERROR;
     }
     if(wrapperType == JZlib.W_NONE) {
