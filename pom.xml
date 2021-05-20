@@ -10,6 +10,12 @@
   <description>JZlib is a re-implementation of zlib in pure Java</description>
   <url>http://www.jcraft.com/jzlib/</url>
 
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>7</version>
+  </parent>
+
   <organization>
     <name>jcraft</name>
     <url>http://www.jcraft.com/</url>
