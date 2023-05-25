@@ -90,4 +90,27 @@ class GZIPIOStreamTest extends FlatSpec with BeforeAndAfter with ShouldMatchers 
 
     csIn.getValue() should equal(csOut.getValue)
   }
+
+  behavior of "GZIPInputStream"
+
+  it can "inflate a concatenated gzip stream." in {
+    // echo -n "a" | gzip > data
+    // echo -n "b" | gzip >> data
+    // echo -n "c" | gzip >> data
+    val data =  {
+     val baos1 = new ByteArrayOutputStream
+      List("a", "b", "c").map{s =>
+        val gos = new GZIPOutputStream(baos1)
+        gos.write(s.getBytes);
+        gos.close
+      }
+      baos1.toByteArray
+    }
+
+    val gis = new GZIPInputStream(new ByteArrayInputStream(data))
+    val baos = new ByteArrayOutputStream()
+    gis -> baos
+
+    baos.toByteArray should equal("abc".getBytes)
+  }
 }
